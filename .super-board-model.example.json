@@ -1,0 +1,8 @@
+{
+  "base_url": "https://api.openai.com/v1",
+  "model": "gpt-4.1",
+  "api_key": "replace-with-your-api-key",
+  "timeout": 120,
+  "max_tokens": 6000,
+  "temperature": 0.2
+}

@@ -7,6 +7,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -261,6 +262,7 @@ class ValidateSkillTests(unittest.TestCase):
         self.assertIn("!records/.gitkeep", ignore_text)
         self.assertIn("!records/README.md", ignore_text)
         self.assertIn("calibration/events.jsonl", ignore_text)
+        self.assertIn(".super-board-model.json", ignore_text)
 
     def test_record_export_markdown_localizes_mode_and_decision(self) -> None:
         markdown = super_board_server.render_record_markdown(
@@ -278,6 +280,35 @@ class ValidateSkillTests(unittest.TestCase):
         self.assertIn("用户模拟委员会", markdown)
         self.assertIn("待判断", markdown)
         self.assertNotIn("synthetic_user_panel", markdown)
+
+    def test_model_config_reports_missing_key_without_exposing_secret(self) -> None:
+        with patch.dict("os.environ", {}, clear=True), patch.object(super_board_server, "MODEL_CONFIG_PATH", ROOT / "missing-model-config.json"):
+            config = super_board_server.model_config()
+            public = super_board_server.public_model_config()
+
+        self.assertFalse(config["configured"])
+        self.assertIn("SUPER_BOARD_LLM_API_KEY 或 OPENAI_API_KEY", config["missing"])
+        self.assertNotIn("api_key", public)
+
+    def test_model_generation_payload_attaches_model_memo_metadata(self) -> None:
+        payload = super_board_server.build_preview_payload(
+            "# 模型生成测试\n\n目标：确认模型生成覆盖本地草案。",
+            "deep_board_review",
+            None,
+        )
+        attached = super_board_server.attach_model_memo(
+            payload,
+            "# 《董事会建议书》：模型生成测试\n\n模型正文",
+            {
+                "model": "test-model",
+                "base_url": "http://127.0.0.1:9999/v1",
+            },
+        )
+
+        self.assertEqual("model", attached["generated_by"])
+        self.assertEqual("# 《董事会建议书》：模型生成测试\n\n模型正文", attached["board_memo"])
+        self.assertEqual("test-model", attached["generation"]["model"])
+        self.assertEqual(attached["board_memo"], attached["record"]["board_memo"])
 
     def test_custom_personas_have_full_nuwa_artifacts(self) -> None:
         custom_personas = validate_skill.parse_custom_personas(ROOT / "sources/awesome-persona-skills.yaml")

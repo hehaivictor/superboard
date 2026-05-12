@@ -5,8 +5,11 @@ from __future__ import annotations
 
 import json
 import mimetypes
+import os
 import sys
 import hashlib
+import urllib.error
+import urllib.request
 from datetime import datetime, timezone
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -18,6 +21,7 @@ WEB_ROOT = Path(__file__).resolve().parent
 ROOT = WEB_ROOT.parent
 DIST_ROOT = WEB_ROOT / "dist"
 PORT = 8766
+MODEL_CONFIG_PATH = ROOT / ".super-board-model.json"
 
 MODE_LABELS = {
     "quick_triage": "快速审议",
@@ -64,6 +68,166 @@ def read_json(handler: BaseHTTPRequestHandler) -> dict[str, object]:
 def stable_id(prefix: str, value: str) -> str:
     digest = hashlib.sha1(value.encode("utf-8")).hexdigest()[:10]
     return f"{prefix}-{digest}"
+
+
+def load_local_model_config() -> dict[str, object]:
+    if not MODEL_CONFIG_PATH.is_file():
+        return {}
+    try:
+        payload = json.loads(MODEL_CONFIG_PATH.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def model_config() -> dict[str, object]:
+    local = load_local_model_config()
+    base_url = str(
+        os.environ.get("SUPER_BOARD_LLM_BASE_URL")
+        or local.get("base_url")
+        or os.environ.get("OPENAI_BASE_URL")
+        or "https://api.openai.com/v1"
+    ).rstrip("/")
+    model = str(
+        os.environ.get("SUPER_BOARD_LLM_MODEL")
+        or local.get("model")
+        or os.environ.get("OPENAI_MODEL")
+        or "gpt-4.1"
+    )
+    api_key = str(os.environ.get("SUPER_BOARD_LLM_API_KEY") or local.get("api_key") or os.environ.get("OPENAI_API_KEY") or "")
+    timeout = int(os.environ.get("SUPER_BOARD_LLM_TIMEOUT") or local.get("timeout") or 120)
+    max_tokens = int(os.environ.get("SUPER_BOARD_LLM_MAX_TOKENS") or local.get("max_tokens") or 6000)
+    temperature = float(os.environ.get("SUPER_BOARD_LLM_TEMPERATURE") or local.get("temperature") or 0.2)
+    missing = []
+    if not api_key:
+        missing.append("SUPER_BOARD_LLM_API_KEY 或 OPENAI_API_KEY")
+    if not model:
+        missing.append("SUPER_BOARD_LLM_MODEL 或 OPENAI_MODEL")
+    return {
+        "configured": len(missing) == 0,
+        "base_url": base_url,
+        "model": model,
+        "api_key": api_key,
+        "timeout": timeout,
+        "max_tokens": max_tokens,
+        "temperature": temperature,
+        "missing": missing,
+        "config_file": str(MODEL_CONFIG_PATH.relative_to(ROOT)),
+    }
+
+
+def public_model_config() -> dict[str, object]:
+    config = model_config()
+    return {
+        "configured": config["configured"],
+        "base_url": config["base_url"],
+        "model": config["model"],
+        "missing": config["missing"],
+        "config_file": config["config_file"],
+    }
+
+
+def chat_completions_url(base_url: str) -> str:
+    return base_url if base_url.endswith("/chat/completions") else f"{base_url}/chat/completions"
+
+
+def call_model(prompt_bundle: str, config: dict[str, object]) -> str:
+    body = json.dumps(
+        {
+            "model": config["model"],
+            "messages": [
+                {
+                    "role": "system",
+                    "content": (
+                        "你是 Super Board 的董事会审议生成器。"
+                        "必须根据用户提供的提示包输出中文《董事会建议书》。"
+                        "不得编造外部事实；无法由来源块支持的内容必须标注为推断或假设。"
+                        "必须包含证据包、假设账本、反证实验、推进/调整/不推进条件和决策记录条目。"
+                    ),
+                },
+                {"role": "user", "content": prompt_bundle},
+            ],
+            "temperature": config["temperature"],
+            "max_tokens": config["max_tokens"],
+        },
+        ensure_ascii=False,
+    ).encode("utf-8")
+    request = urllib.request.Request(
+        chat_completions_url(str(config["base_url"])),
+        data=body,
+        headers={
+            "Authorization": f"Bearer {config['api_key']}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=int(config["timeout"])) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        detail = exc.read().decode("utf-8", errors="replace")[:500]
+        api_key = str(config.get("api_key", ""))
+        if api_key:
+            detail = detail.replace(api_key, "[redacted]")
+        raise RuntimeError(f"模型接口返回 {exc.code}：{detail}") from exc
+    except urllib.error.URLError as exc:
+        raise RuntimeError(f"模型接口不可达：{exc.reason}") from exc
+
+    choices = payload.get("choices", [])
+    if choices and isinstance(choices[0], dict):
+        message = choices[0].get("message", {})
+        if isinstance(message, dict) and message.get("content"):
+            return str(message["content"]).strip()
+    if payload.get("output_text"):
+        return str(payload["output_text"]).strip()
+    raise RuntimeError("模型响应中没有可用正文。")
+
+
+def build_preview_payload(material: str, mode_id: str, material_pack: object) -> dict[str, object]:
+    modes = load_modes(ROOT)
+    if mode_id not in modes:
+        raise ValueError(f"unknown mode: {mode_id}")
+    input_path = ROOT / "inline-input.md"
+    record = build_record(
+        input_path,
+        material,
+        modes[mode_id],
+        material_pack if isinstance(material_pack, dict) else None,
+    )
+    prompt_bundle = build_prompt_bundle(input_path, material, modes[mode_id], record)
+    board_memo = build_board_memo(input_path, material, modes[mode_id], record)
+    record["board_memo"] = board_memo
+    return {
+        "record": record,
+        "board_memo": board_memo,
+        "prompt_bundle": prompt_bundle,
+        "evidence_packets": record["evidence_packets"],
+        "assumptions": record["assumptions"],
+        "material_pack": record["material_pack"],
+        "review_run": record["review_run"],
+        "action_items": record["action_items"],
+        "calibration_events": record["calibration_events"],
+        "generated_by": "local_draft",
+    }
+
+
+def attach_model_memo(payload: dict[str, object], board_memo: str, config: dict[str, object]) -> dict[str, object]:
+    record = payload["record"]
+    assert isinstance(record, dict)
+    generated_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+    prompt_bundle = str(payload.get("prompt_bundle", ""))
+    record["board_memo"] = board_memo
+    record["generation"] = {
+        "source": "model",
+        "model": config["model"],
+        "base_url": config["base_url"],
+        "generated_at": generated_at,
+        "prompt_hash": hashlib.sha256(prompt_bundle.encode("utf-8")).hexdigest()[:16],
+    }
+    payload["board_memo"] = board_memo
+    payload["generated_by"] = "model"
+    payload["generation"] = record["generation"]
+    return payload
 
 
 def build_material_pack_from_files(files: list[dict[str, object]]) -> dict[str, object]:
@@ -210,6 +374,7 @@ class Handler(BaseHTTPRequestHandler):
                     "board_id": "default",
                     "modes": modes,
                     "template_version": template_version(),
+                    "llm": public_model_config(),
                 },
             )
             return
@@ -269,34 +434,41 @@ class Handler(BaseHTTPRequestHandler):
             if not material:
                 json_response(self, {"error": "material is required"}, HTTPStatus.BAD_REQUEST)
                 return
-            modes = load_modes(ROOT)
-            if mode_id not in modes:
-                json_response(self, {"error": f"unknown mode: {mode_id}"}, HTTPStatus.BAD_REQUEST)
+            try:
+                json_response(self, build_preview_payload(material, mode_id, material_pack))
+            except ValueError as exc:
+                json_response(self, {"error": str(exc)}, HTTPStatus.BAD_REQUEST)
                 return
-            input_path = ROOT / "inline-input.md"
-            record = build_record(
-                input_path,
-                material,
-                modes[mode_id],
-                material_pack if isinstance(material_pack, dict) else None,
-            )
-            prompt_bundle = build_prompt_bundle(input_path, material, modes[mode_id], record)
-            board_memo = build_board_memo(input_path, material, modes[mode_id], record)
-            record["board_memo"] = board_memo
-            json_response(
-                self,
-                {
-                    "record": record,
-                    "board_memo": board_memo,
-                    "prompt_bundle": prompt_bundle,
-                    "evidence_packets": record["evidence_packets"],
-                    "assumptions": record["assumptions"],
-                    "material_pack": record["material_pack"],
-                    "review_run": record["review_run"],
-                    "action_items": record["action_items"],
-                    "calibration_events": record["calibration_events"],
-                },
-            )
+            return
+        if parsed.path == "/api/generate":
+            payload = read_json(self)
+            material = str(payload.get("material", "")).strip()
+            mode_id = str(payload.get("mode_id", "deep_board_review"))
+            material_pack = payload.get("material_pack")
+            if not material:
+                json_response(self, {"error": "material is required"}, HTTPStatus.BAD_REQUEST)
+                return
+            config = model_config()
+            if not config["configured"]:
+                json_response(
+                    self,
+                    {
+                        "error": "模型未配置",
+                        "missing": config["missing"],
+                        "hint": "设置环境变量 SUPER_BOARD_LLM_API_KEY / SUPER_BOARD_LLM_MODEL / SUPER_BOARD_LLM_BASE_URL，或创建本地 .super-board-model.json。",
+                        "config_file": config["config_file"],
+                    },
+                    HTTPStatus.BAD_REQUEST,
+                )
+                return
+            try:
+                response_payload = build_preview_payload(material, mode_id, material_pack)
+                board_memo = call_model(str(response_payload["prompt_bundle"]), config)
+                json_response(self, attach_model_memo(response_payload, board_memo, config))
+            except ValueError as exc:
+                json_response(self, {"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+            except RuntimeError as exc:
+                json_response(self, {"error": str(exc)}, HTTPStatus.BAD_GATEWAY)
             return
         if parsed.path == "/api/record":
             payload = read_json(self)

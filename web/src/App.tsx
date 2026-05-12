@@ -16,6 +16,15 @@ type Config = {
   board_id: string;
   modes: Mode[];
   template_version: string;
+  llm?: LlmConfig;
+};
+
+type LlmConfig = {
+  configured: boolean;
+  base_url: string;
+  model: string;
+  missing: string[];
+  config_file: string;
 };
 
 type Preview = {
@@ -68,6 +77,13 @@ type ReviewRun = {
 const fallbackConfig: Config = {
   board_id: "default",
   template_version: "local-fallback",
+  llm: {
+    configured: false,
+    base_url: "https://api.openai.com/v1",
+    model: "gpt-4.1",
+    missing: ["SUPER_BOARD_LLM_API_KEY 或 OPENAI_API_KEY"],
+    config_file: ".super-board-model.json"
+  },
   modes: [
     {
       mode_id: "deep_board_review",
@@ -211,6 +227,12 @@ function displayTemplate(version: string) {
   return version === "local-fallback" ? "本地模板" : `模板版本 ${version}`;
 }
 
+function displayModel(config: Config) {
+  const llm = config.llm;
+  if (!llm) return "模型状态未知";
+  return llm.configured ? `模型 ${llm.model}` : "模型未配置";
+}
+
 function displayMode(modeId: string) {
   return modeLabels[modeId] ?? modeId;
 }
@@ -334,19 +356,44 @@ export function App() {
 
   async function handlePreview(event: FormEvent) {
     event.preventDefault();
-    setStatus("正在生成董事会建议书");
+    await generateLocalDraft();
+  }
+
+  async function generateLocalDraft() {
+    setStatus("正在生成本地草案");
     const response = await fetch("/api/preview", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ material, mode_id: modeId, material_pack: materialPack })
     });
     if (!response.ok) {
-      setStatus("预览失败，请检查本地 API");
+      setStatus("本地草案生成失败，请检查本地 API");
       return;
     }
     const payload = await response.json();
     setPreview(payload);
-    setStatus("董事会建议书已生成，未调用外部模型");
+    setStatus("本地草案已生成，未调用模型");
+  }
+
+  async function generateModelMemo() {
+    const llm = config.llm;
+    if (!llm?.configured) {
+      setStatus(`模型未配置：${llm?.missing?.join("，") ?? "缺少 API 配置"}`);
+      return;
+    }
+    setStatus(`正在调用模型生成董事会建议书：${llm.model}`);
+    const response = await fetch("/api/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ material, mode_id: modeId, material_pack: materialPack })
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setStatus(String(payload.error ?? "模型生成失败"));
+      return;
+    }
+    setPreview(payload);
+    setStatus(`模型建议书已生成：${payload.generation?.model ?? llm.model}`);
   }
 
   async function handleMaterialFile(event: ChangeEvent<HTMLInputElement>) {
@@ -480,6 +527,7 @@ export function App() {
           <div className="flex items-center gap-2">
             <Badge>{displayBoard(config.board_id)}</Badge>
             <Badge>{displayTemplate(config.template_version)}</Badge>
+            <Badge>{displayModel(config)}</Badge>
           </div>
         </div>
       </header>
@@ -535,10 +583,26 @@ export function App() {
             onChange={(event) => setMaterial(event.target.value)}
             className="min-h-[420px] w-full resize-y rounded-md border border-slate-300 px-3 py-2 font-mono text-sm leading-6"
           />
-          <button className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-slate-950 px-3 py-2 text-sm font-medium text-white">
-            <RefreshCw size={16} />
-            生成董事会建议书
-          </button>
+          {config.llm && !config.llm.configured && (
+            <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+              模型未配置：设置 {config.llm.missing.join("，")}，或创建 {config.llm.config_file}。
+            </div>
+          )}
+          <div className="grid grid-cols-1 gap-2">
+            <button
+              type="button"
+              onClick={generateModelMemo}
+              disabled={!config.llm?.configured}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-slate-950 px-3 py-2 text-sm font-medium text-white disabled:opacity-40"
+            >
+              <RefreshCw size={16} />
+              调用模型生成建议书
+            </button>
+            <button className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700">
+              <FileText size={16} />
+              只生成本地草案
+            </button>
+          </div>
         </form>
 
         <section className="rounded-lg border border-slate-200 bg-white">
@@ -569,7 +633,7 @@ export function App() {
             </div>
           </div>
           <pre className="h-[690px] overflow-auto whitespace-pre-wrap p-4 text-sm leading-6 text-slate-700">
-            {preview?.board_memo ?? "点击“生成董事会建议书”后，这里会显示可导出的董事会建议书草案。"}
+            {preview?.board_memo ?? "点击“调用模型生成建议书”后，这里会显示大模型生成的董事会建议书；未配置模型时只能生成本地草案。"}
           </pre>
         </section>
 
