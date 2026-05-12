@@ -9,6 +9,7 @@ import json
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -20,6 +21,7 @@ COMMITTEE_LABELS = {
     "investment-masters": "投资大师组",
     "consulting-elite": "咨询精英组",
     "product-users": "产品与用户组",
+    "synthetic-users": "用户模拟组",
 }
 
 SECTION_LABELS = {
@@ -40,6 +42,24 @@ INPUT_TYPE_LABELS = {
     "business_plan": "商业计划",
     "unknown": "未识别",
 }
+
+STATUS_LABELS = {
+    "ready": "就绪",
+    "pending_model": "等待模型",
+    "not_started": "未开始",
+    "in_progress": "进行中",
+    "validated": "已验证",
+    "failed": "失败",
+}
+
+REVIEW_STAGES = [
+    ("material_breakdown", "材料拆解", "已生成材料包和来源块。"),
+    ("independent_review", "独立审阅", "等待模型按委员会契约独立审阅。"),
+    ("committee_deliberation", "委员会合议", "等待模型归并共识、分歧和少数派警告。"),
+    ("cross_committee_synthesis", "跨委员会综合", "等待模型综合冲突和证据强度。"),
+    ("evidence_packet", "证据包", "已生成本地证据包骨架。"),
+    ("decision_record", "决策记录", "已生成可复盘的决策记录骨架。"),
+]
 
 
 def parse_mode(path: Path) -> dict[str, object]:
@@ -105,23 +125,115 @@ def decision_id_for(title: str, mode_id: str, created_at: str) -> str:
     return f"SB-{digest}"
 
 
-def build_record(input_path: Path, text: str, mode: dict[str, object]) -> dict[str, object]:
-    created_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+def stable_id(prefix: str, value: str, length: int = 10) -> str:
+    digest = hashlib.sha1(value.encode("utf-8")).hexdigest()[:length]
+    return f"{prefix}-{digest}"
+
+
+def chunk_text(text: str, size: int = 1200) -> list[str]:
+    paragraphs = [paragraph.strip() for paragraph in text.split("\n\n") if paragraph.strip()]
+    chunks: list[str] = []
+    current = ""
+    for paragraph in paragraphs or [text.strip()]:
+        if current and len(current) + len(paragraph) + 2 > size:
+            chunks.append(current)
+            current = paragraph
+        else:
+            current = f"{current}\n\n{paragraph}".strip() if current else paragraph
+    if current:
+        chunks.append(current)
+    return chunks
+
+
+def build_material_pack_from_text(input_path: Path, text: str) -> dict[str, Any]:
     title = extract_title(text, input_path)
-    mode_id = str(mode["mode_id"])
+    file_id = stable_id("file", str(input_path))
+    source_blocks = [
+        {
+            "block_id": f"src-{index + 1:03d}",
+            "file_id": file_id,
+            "source_file": input_path.name,
+            "text": chunk,
+        }
+        for index, chunk in enumerate(chunk_text(text))
+    ]
     return {
-        "decision_id": decision_id_for(title, mode_id, created_at),
+        "pack_id": stable_id("pack", f"{input_path}|{text[:200]}"),
+        "title": title,
+        "files": [
+            {
+                "file_id": file_id,
+                "name": input_path.name,
+                "size": len(text.encode("utf-8")),
+                "type": input_path.suffix.lstrip(".") or "markdown",
+                "status": "read",
+            }
+        ],
+        "source_blocks": source_blocks,
+        "warnings": [],
+    }
+
+
+def normalize_material_pack(input_path: Path, text: str, material_pack: dict[str, Any] | None = None) -> dict[str, Any]:
+    if material_pack and material_pack.get("source_blocks"):
+        return material_pack
+    return build_material_pack_from_text(input_path, text)
+
+
+def build_review_run(mode_id: str) -> dict[str, object]:
+    return {
+        "run_id": stable_id("run", f"{mode_id}|{datetime.now(timezone.utc).isoformat()}"),
+        "mode_id": mode_id,
+        "stages": [
+            {
+                "stage_id": stage_id,
+                "name": name,
+                "status": "ready" if stage_id in {"material_breakdown", "evidence_packet", "decision_record"} else "pending_model",
+                "summary": summary,
+            }
+            for stage_id, name, summary in REVIEW_STAGES
+        ],
+    }
+
+
+def first_source_block(material_pack: dict[str, Any]) -> dict[str, Any]:
+    blocks = material_pack.get("source_blocks") or []
+    if blocks and isinstance(blocks[0], dict):
+        return blocks[0]
+    return {"block_id": "src-000", "source_file": "inline-input.md", "text": ""}
+
+
+def build_record(
+    input_path: Path,
+    text: str,
+    mode: dict[str, object],
+    material_pack: dict[str, Any] | None = None,
+) -> dict[str, object]:
+    created_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+    normalized_pack = normalize_material_pack(input_path, text, material_pack)
+    title = str(normalized_pack.get("title") or extract_title(text, input_path))
+    mode_id = str(mode["mode_id"])
+    source = first_source_block(normalized_pack)
+    source_text = str(source.get("text", "")).strip()
+    source_excerpt = source_text[:220] + ("..." if len(source_text) > 220 else "")
+    review_run = build_review_run(mode_id)
+    decision_id = decision_id_for(title, mode_id, created_at)
+    return {
+        "decision_id": decision_id,
         "created_at": created_at,
         "input_type": infer_input_type(text, input_path),
         "mode_id": mode_id,
         "title": title,
         "decision": "Pending",
+        "material_pack": normalized_pack,
+        "review_run": review_run,
         "assumptions": [
             {
                 "assumption": "审议尚未由模型完成，此记录为运行器生成的待填充骨架。",
                 "type": "process",
                 "confidence": "low",
                 "checkpoints": [30, 60, 90],
+                "source_block_id": source.get("block_id", "src-000"),
             }
         ],
         "evidence_packets": [
@@ -129,15 +241,37 @@ def build_record(input_path: Path, text: str, mode: dict[str, object]) -> dict[s
                 "claim": "输入材料已装配为超级董事会提示包。",
                 "claim_type": "fact",
                 "evidence_source": str(input_path),
+                "source_file": source.get("source_file", input_path.name),
+                "source_block_id": source.get("block_id", "src-000"),
+                "source_excerpt": source_excerpt,
                 "confidence": "high",
                 "counterevidence": "输入路径错误或文件内容为空。",
                 "disproof_test": "重新读取输入文件并核对提示包。",
+            }
+        ],
+        "action_items": [
+            {
+                "action_id": "act-001",
+                "description": "补充真实材料证据后运行完整董事会审议。",
+                "owner": "",
+                "due": "",
+                "status": "not_started",
             }
         ],
         "follow_up_checkpoints": [
             {"day": 30, "question": "关键假设是否已有真实证据？"},
             {"day": 60, "question": "Go / Pivot / No-Go 条件是否被触发？"},
             {"day": 90, "question": "是否需要校准委员会判断？"},
+        ],
+        "calibration_events": [
+            {
+                "event_id": stable_id("cal", decision_id),
+                "decision_id": decision_id,
+                "created_at": created_at,
+                "mode_id": mode_id,
+                "signal": "pending_followup",
+                "note": "等待 30 / 60 / 90 天复盘后记录命中情况。",
+            }
         ],
     }
 
@@ -153,6 +287,20 @@ def build_prompt_bundle(input_path: Path, text: str, mode: dict[str, object], re
     depth = str(mode.get("depth"))
     include_appendix = "是" if mode.get("include_persona_appendix") else "否"
     mode_name = str(mode.get("name", record["mode_id"]))
+    material_pack = record.get("material_pack", {})
+    source_blocks = []
+    if isinstance(material_pack, dict):
+        source_blocks = material_pack.get("source_blocks", [])
+    source_block_lines = "\n".join(
+        f"- {block.get('block_id')} · {block.get('source_file')}：{str(block.get('text', '')).strip()[:140]}"
+        for block in source_blocks
+        if isinstance(block, dict)
+    )
+    stage_lines = "\n".join(
+        f"- {stage.get('name')}：{STATUS_LABELS.get(str(stage.get('status')), str(stage.get('status')))}"
+        for stage in record.get("review_run", {}).get("stages", [])  # type: ignore[union-attr]
+        if isinstance(stage, dict)
+    )
     return f"""# 超级董事会提示包
 
 ## 决策记录
@@ -176,9 +324,23 @@ def build_prompt_bundle(input_path: Path, text: str, mode: dict[str, object], re
 
 {required_sections}
 
+## 材料包
+
+- 材料包编号：{material_pack.get("pack_id") if isinstance(material_pack, dict) else ""}
+- 材料标题：{material_pack.get("title") if isinstance(material_pack, dict) else ""}
+- 文件数量：{len(material_pack.get("files", [])) if isinstance(material_pack, dict) else 0}
+
+## 来源块
+
+{source_block_lines or "- 暂无来源块"}
+
+## 审议流程
+
+{stage_lines}
+
 ## 执行说明
 
-严格遵循 `protocols/board-review.md` 和 `templates/board-memo.md`。必须输出证据包、假设账本和决策记录条目。不得编造外部数据、人物原话或模型运行结果。
+严格遵循 `protocols/board-review.md` 和 `templates/board-memo.md`。必须输出证据包、假设账本和决策记录条目。每条核心判断必须引用来源块；没有来源块时必须标注为推断或假设。不得编造外部数据、人物原话或模型运行结果。
 
 ## 输入材料
 

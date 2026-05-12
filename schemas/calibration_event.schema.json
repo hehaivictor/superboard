@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Super Board Calibration Event",
+  "type": "object",
+  "required": ["event_id", "decision_id", "created_at", "mode_id", "signal"],
+  "properties": {
+    "event_id": { "type": "string" },
+    "decision_id": { "type": "string" },
+    "created_at": { "type": "string" },
+    "mode_id": { "type": "string" },
+    "signal": { "type": "string" },
+    "note": { "type": "string" }
+  },
+  "additionalProperties": true
+}

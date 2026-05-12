@@ -22,11 +22,16 @@ REQUIRED_FILES = [
     "templates/committee-summary.md",
     "templates/decision-log-entry.md",
     "templates/follow-up-review.md",
+    "templates/user-panel-summary.md",
     "templates/persona-dossier.md",
     "docs/source-policy.md",
     "schemas/board_mode.schema.json",
     "schemas/decision_record.schema.json",
     "schemas/evidence_packet.schema.json",
+    "schemas/material_pack.schema.json",
+    "schemas/review_run.schema.json",
+    "schemas/calibration_event.schema.json",
+    "schemas/action_item.schema.json",
 ]
 
 REQUIRED_PERSONA_FIELDS = [
@@ -78,6 +83,7 @@ REQUIRED_MODE_IDS = [
     "investment_committee",
     "product_discovery",
     "go_to_market_review",
+    "synthetic_user_panel",
 ]
 
 REQUIRED_MODE_FIELDS = [
@@ -95,6 +101,10 @@ REQUIRED_SCHEMA_FILES = [
     "schemas/board_mode.schema.json",
     "schemas/decision_record.schema.json",
     "schemas/evidence_packet.schema.json",
+    "schemas/material_pack.schema.json",
+    "schemas/review_run.schema.json",
+    "schemas/calibration_event.schema.json",
+    "schemas/action_item.schema.json",
 ]
 
 REQUIRED_MERMAID_BLOCKS = 3

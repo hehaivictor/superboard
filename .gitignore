@@ -1,8 +1,12 @@
 records/*
 !records/.gitkeep
+!records/README.md
+calibration/events.jsonl
 output/
 web/dist/
 web/node_modules/
+.venv-harness/
+.codex/
 .playwright-mcp/
 *.log
 __pycache__/

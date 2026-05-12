@@ -1,0 +1,21 @@
+mode_id: synthetic_user_panel
+name: 用户模拟委员会
+description: 基于输入材料模拟目标用户阻力、购买顾虑、替代方案和真实访谈问题；所有结论默认作为待验证线索。
+recommended_for:
+  - 产品概念测试
+  - 定价与包装预判
+  - 用户访谈准备
+  - 市场阻力排查
+enabled_committees:
+  - startup-mentors
+  - product-users
+  - synthetic-users
+required_sections:
+  - 输入材料结构化拆解
+  - 用户阻力地图
+  - Evidence Packet
+  - Assumption Ledger
+  - 需要补充验证的问题
+  - 建议行动清单
+depth: focused
+include_persona_appendix: false

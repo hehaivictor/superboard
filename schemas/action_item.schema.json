@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Super Board Action Item",
+  "type": "object",
+  "required": ["action_id", "description", "status"],
+  "properties": {
+    "action_id": { "type": "string" },
+    "description": { "type": "string" },
+    "owner": { "type": "string" },
+    "due": { "type": "string" },
+    "status": {
+      "type": "string",
+      "enum": ["not_started", "in_progress", "validated", "failed"]
+    }
+  },
+  "additionalProperties": true
+}
