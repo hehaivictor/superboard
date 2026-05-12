@@ -1,0 +1,83 @@
+catalog_id: awesome-persona-skills
+catalog_url: https://github.com/tmstack/awesome-persona-skills
+audited_at: "2026-05-12"
+usage_policy: >
+  Treat the catalog as an upstream index. Directly imported persona assets must
+  have their own license checked. When no direct upstream exists, use the
+  nuwa-skill extraction framework with concrete public sources, create a full
+  local artifact under nuwa_distillations/<persona-id>/, then compress that
+  artifact into the board persona dossier instead of copying external text.
+direct_upstreams:
+  - persona_id: warren-buffett
+    upstream_repo: https://github.com/will2025btc/buffett-perspective
+    upstream_catalog_label: 巴菲特.skill
+    license_status: MIT
+    import_mode: adapted-with-attribution
+    committee: investment-masters
+  - persona_id: steve-jobs
+    upstream_repo: https://github.com/alchaincyf/steve-jobs-skill
+    upstream_catalog_label: 乔布斯.skill
+    license_status: MIT
+    import_mode: adapted-with-attribution
+    committee: business-leaders
+  - persona_id: elon-musk
+    upstream_repo: https://github.com/alchaincyf/elon-musk-skill
+    upstream_catalog_label: 马斯克.skill
+    license_status: MIT
+    import_mode: adapted-with-attribution
+    committee: business-leaders
+  - persona_id: charlie-munger
+    upstream_repo: https://github.com/alchaincyf/munger-skill
+    upstream_catalog_label: 芒格.skill
+    license_status: MIT
+    import_mode: adapted-with-attribution
+    committee: investment-masters
+  - persona_id: richard-feynman
+    upstream_repo: https://github.com/alchaincyf/feynman-skill
+    upstream_catalog_label: 费曼.skill
+    license_status: MIT
+    import_mode: adapted-with-attribution
+    committee: product-users
+  - persona_id: naval-ravikant
+    upstream_repo: https://github.com/alchaincyf/naval-skill
+    upstream_catalog_label: 纳瓦尔.skill
+    license_status: MIT
+    import_mode: adapted-with-attribution
+    committee: product-users
+  - persona_id: nassim-taleb
+    upstream_repo: https://github.com/alchaincyf/taleb-skill
+    upstream_catalog_label: 塔勒布.skill
+    license_status: MIT
+    import_mode: adapted-with-attribution
+    committee: investment-masters
+  - persona_id: zhang-yiming
+    upstream_repo: https://github.com/alchaincyf/zhang-yiming-skill
+    upstream_catalog_label: 张一鸣.skill
+    license_status: MIT
+    import_mode: adapted-with-attribution
+    committee: business-leaders
+method_upstreams:
+  - repo: https://github.com/alchaincyf/nuwa-skill
+    license_status: MIT
+    role: distillation-method
+  - repo: https://github.com/Aar0nPB/curator-skill
+    license_status: MIT
+    role: persona-router-method
+custom_personas:
+  - jeff-bezos
+  - lou-gerstner
+  - paul-graham
+  - sam-altman
+  - reid-hoffman
+  - marc-andreessen
+  - peter-thiel
+  - george-soros
+  - ray-dalio
+  - michael-porter
+  - clayton-christensen
+  - marvin-bower
+  - bruce-henderson
+  - orit-gadiesh
+  - don-norman
+  - marty-cagan
+  - julie-zhuo

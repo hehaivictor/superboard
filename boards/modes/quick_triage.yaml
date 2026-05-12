@@ -1,0 +1,20 @@
+mode_id: quick_triage
+name: 快速审议
+description: 用最少委员会快速判断材料是否值得进入深度董事会审议。
+recommended_for:
+  - 短产品想法
+  - 早期项目判断
+  - 需要快速识别最大机会和最大风险的材料
+enabled_committees:
+  - business-leaders
+  - startup-mentors
+  - product-users
+required_sections:
+  - 输入材料结构化拆解
+  - 一句话结论
+  - Go / No-Go / Pivot 建议
+  - Evidence Packet
+  - Assumption Ledger
+  - 建议行动清单
+depth: quick
+include_persona_appendix: false

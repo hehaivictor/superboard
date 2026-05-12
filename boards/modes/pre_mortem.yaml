@@ -1,0 +1,20 @@
+mode_id: pre_mortem
+name: 事前验尸
+description: 假设项目已经失败，倒推最可能的失败路径、早期信号和防护动作。
+recommended_for:
+  - 项目启动前复核
+  - 资源投入前风险审查
+  - 里程碑计划校验
+enabled_committees:
+  - business-leaders
+  - investment-masters
+  - consulting-elite
+required_sections:
+  - 输入材料结构化拆解
+  - Evidence Packet
+  - Assumption Ledger
+  - 反证与失败路径
+  - 决策条件
+  - 30 / 60 / 90 天行动方案
+depth: focused
+include_persona_appendix: false

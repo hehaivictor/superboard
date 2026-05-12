@@ -1,0 +1,22 @@
+mode_id: go_to_market_review
+name: GTM 审议
+description: 聚焦目标客户、渠道、定价、竞争定位、销售阻力和市场进入节奏。
+recommended_for:
+  - 市场进入策略
+  - 商业化计划
+  - 定价与包装
+  - 渠道策略
+enabled_committees:
+  - business-leaders
+  - startup-mentors
+  - consulting-elite
+required_sections:
+  - 输入材料结构化拆解
+  - 价值链 / 工作流图
+  - Evidence Packet
+  - Assumption Ledger
+  - 跨委员会共识
+  - 关键分歧
+  - 30 / 60 / 90 天路线图
+depth: focused
+include_persona_appendix: false

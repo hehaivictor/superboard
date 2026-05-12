@@ -1,0 +1,21 @@
+mode_id: red_team
+name: 红队反证审查
+description: 优先寻找方案失败路径、误判来源、证据缺口和停止条件。
+recommended_for:
+  - 已有明确方案但担心盲点
+  - 投入前风险复核
+  - 需要反方审查的项目
+enabled_committees:
+  - investment-masters
+  - consulting-elite
+  - product-users
+required_sections:
+  - 输入材料结构化拆解
+  - Evidence Packet
+  - Assumption Ledger
+  - 最大风险
+  - 反证与失败路径
+  - 决策条件
+  - 不建议做什么
+depth: focused
+include_persona_appendix: false

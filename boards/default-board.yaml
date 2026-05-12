@@ -1,0 +1,58 @@
+board_id: default
+name: Super Board 默认董事会
+description: 产品需求、项目计划、商业计划的多委员会审议配置。
+supported_input_types:
+  - product_requirement
+  - project_plan
+  - business_plan
+committees:
+  - id: business-leaders
+    name: 商业领袖组
+    review_focus: 产品直觉、品牌、长期战略、客户倒推、组织执行。
+    output_expectations: 判断方向是否足够重要、差异化是否清晰、组织是否能交付。
+    personas:
+      - steve-jobs
+      - elon-musk
+      - jeff-bezos
+      - zhang-yiming
+      - lou-gerstner
+  - id: startup-mentors
+    name: 创业导师组
+    review_focus: 创业起点、用户痛点、增长路径、网络效应、融资叙事。
+    output_expectations: 判断是否有真实用户拉力、是否能从小切口进入大市场。
+    personas:
+      - paul-graham
+      - sam-altman
+      - reid-hoffman
+      - marc-andreessen
+      - peter-thiel
+  - id: investment-masters
+    name: 投资大师组
+    review_focus: 商业质量、现金流、护城河、误判、反身性、周期与尾部风险。
+    output_expectations: 判断长期价值、下行风险、资本效率和反脆弱性。
+    personas:
+      - warren-buffett
+      - charlie-munger
+      - nassim-taleb
+      - george-soros
+      - ray-dalio
+  - id: consulting-elite
+    name: 咨询精英组
+    review_focus: 竞争战略、市场结构、创新路径、资源配置、运营改善。
+    output_expectations: 判断战略选项、执行路径、组织协同和可衡量结果。
+    personas:
+      - michael-porter
+      - clayton-christensen
+      - marvin-bower
+      - bruce-henderson
+      - orit-gadiesh
+  - id: product-users
+    name: 产品与用户组
+    review_focus: 可解释性、用户体验、产品发现、认知负担、团队协作。
+    output_expectations: 判断用户价值、使用阻力、产品风险和下一步实验。
+    personas:
+      - richard-feynman
+      - naval-ravikant
+      - don-norman
+      - marty-cagan
+      - julie-zhuo

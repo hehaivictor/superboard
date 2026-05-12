@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Super Board Mode",
+  "type": "object",
+  "required": [
+    "mode_id",
+    "name",
+    "description",
+    "recommended_for",
+    "enabled_committees",
+    "required_sections",
+    "depth",
+    "include_persona_appendix"
+  ],
+  "properties": {
+    "mode_id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "recommended_for": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "enabled_committees": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "required_sections": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "depth": {
+      "type": "string",
+      "enum": ["quick", "focused", "deep"]
+    },
+    "include_persona_appendix": {
+      "type": "boolean"
+    }
+  },
+  "additionalProperties": false
+}

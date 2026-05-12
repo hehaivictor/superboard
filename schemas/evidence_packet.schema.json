@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Super Board Evidence Packet",
+  "type": "object",
+  "required": [
+    "claim",
+    "claim_type",
+    "evidence_source",
+    "confidence",
+    "counterevidence",
+    "disproof_test"
+  ],
+  "properties": {
+    "claim": {
+      "type": "string"
+    },
+    "claim_type": {
+      "type": "string",
+      "enum": ["fact", "inference", "assumption"]
+    },
+    "evidence_source": {
+      "type": "string"
+    },
+    "confidence": {
+      "type": "string",
+      "enum": ["high", "medium", "low"]
+    },
+    "counterevidence": {
+      "type": "string"
+    },
+    "disproof_test": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}

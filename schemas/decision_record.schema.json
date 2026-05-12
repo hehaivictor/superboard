@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Super Board Decision Record",
+  "type": "object",
+  "required": [
+    "decision_id",
+    "created_at",
+    "input_type",
+    "mode_id",
+    "title",
+    "decision",
+    "assumptions",
+    "evidence_packets",
+    "follow_up_checkpoints"
+  ],
+  "properties": {
+    "decision_id": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": "string"
+    },
+    "input_type": {
+      "type": "string",
+      "enum": ["product_requirement", "project_plan", "business_plan", "unknown"]
+    },
+    "mode_id": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "decision": {
+      "type": "string",
+      "enum": ["Go", "Pivot", "No-Go", "Pending"]
+    },
+    "assumptions": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "evidence_packets": {
+      "type": "array",
+      "items": {
+        "$ref": "evidence_packet.schema.json"
+      }
+    },
+    "follow_up_checkpoints": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    }
+  },
+  "additionalProperties": true
+}

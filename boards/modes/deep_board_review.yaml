@@ -1,0 +1,25 @@
+mode_id: deep_board_review
+name: 深度董事会审议
+description: 默认完整审议模式，覆盖五个委员会、证据强度、分歧、反证和 30 / 60 / 90 天行动。
+recommended_for:
+  - 产品需求
+  - 项目计划
+  - 商业计划
+  - 需要可转发董事会建议书的材料
+enabled_committees:
+  - business-leaders
+  - startup-mentors
+  - investment-masters
+  - consulting-elite
+  - product-users
+required_sections:
+  - 输入材料结构化拆解
+  - 核心假设表
+  - Evidence Packet
+  - Assumption Ledger
+  - 各委员会结论
+  - 董事会审议信号图
+  - 反证与失败路径
+  - Decision Log Entry
+depth: deep
+include_persona_appendix: true

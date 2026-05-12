@@ -1,0 +1,22 @@
+mode_id: investment_committee
+name: 投资委员会
+description: 用资本效率、商业质量、护城河、下行风险和周期视角审查计划。
+recommended_for:
+  - 商业计划
+  - 融资叙事
+  - 资源投入决策
+  - 新业务立项
+enabled_committees:
+  - startup-mentors
+  - investment-masters
+  - consulting-elite
+required_sections:
+  - 输入材料结构化拆解
+  - 核心假设表
+  - Evidence Packet
+  - Assumption Ledger
+  - 最大机会
+  - 最大风险
+  - 决策条件
+depth: deep
+include_persona_appendix: true
