@@ -302,6 +302,10 @@ function assumptionRows(preview: Preview | null) {
   return preview?.assumptions ?? [];
 }
 
+function sleep(ms: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
 export function App() {
   const [config, setConfig] = useState<Config>(fallbackConfig);
   const [modeId, setModeId] = useState("deep_board_review");
@@ -359,6 +363,10 @@ export function App() {
         setGenerationError(message);
         return;
       }
+      if (payload.job_id) {
+        await pollGenerationJob(String(payload.job_id), llm.model);
+        return;
+      }
       setPreview(payload);
       setStatus(`模型建议书已生成：${payload.generation?.model ?? llm.model}`);
       setGenerationError(null);
@@ -369,6 +377,43 @@ export function App() {
     } finally {
       setIsGenerating(false);
     }
+  }
+
+  async function pollGenerationJob(jobId: string, model: string) {
+    for (let attempt = 0; attempt < 180; attempt += 1) {
+      await sleep(attempt === 0 ? 800 : 2000);
+      const response = await fetch(`/api/jobs/${jobId}`);
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const message = String(payload.error ?? "生成任务读取失败");
+        setStatus(message);
+        setGenerationError(message);
+        return;
+      }
+      if (payload.status === "running") {
+        setStatus(`生成任务已创建，等待调用 ${model}`);
+        continue;
+      }
+      if (payload.status === "calling_model") {
+        setStatus(`正在调用 ${model} 生成董事会建议书`);
+        continue;
+      }
+      if (payload.status === "failed") {
+        const message = String(payload.error ?? "模型生成失败");
+        setStatus(message);
+        setGenerationError(message);
+        return;
+      }
+      if (payload.status === "succeeded" && payload.result) {
+        setPreview(payload.result as Preview);
+        setStatus(`模型建议书已生成：${model}`);
+        setGenerationError(null);
+        return;
+      }
+    }
+    const message = "模型生成超时，请稍后重试。";
+    setStatus(message);
+    setGenerationError(message);
   }
 
   async function handleMaterialFile(event: ChangeEvent<HTMLInputElement>) {

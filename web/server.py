@@ -8,8 +8,10 @@ import mimetypes
 import os
 import sys
 import hashlib
+import threading
 import urllib.error
 import urllib.request
+import uuid
 from datetime import datetime, timezone
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -22,6 +24,8 @@ ROOT = WEB_ROOT.parent
 DIST_ROOT = WEB_ROOT / "dist"
 PORT = 8766
 MODEL_CONFIG_PATH = ROOT / ".super-board-model.json"
+GENERATION_JOBS: dict[str, dict[str, object]] = {}
+GENERATION_JOBS_LOCK = threading.Lock()
 
 MODE_LABELS = {
     "quick_triage": "快速审议",
@@ -230,6 +234,59 @@ def attach_model_memo(payload: dict[str, object], board_memo: str, config: dict[
     return payload
 
 
+def update_generation_job(job_id: str, values: dict[str, object]) -> None:
+    with GENERATION_JOBS_LOCK:
+        job = GENERATION_JOBS.setdefault(job_id, {})
+        job.update(values)
+
+
+def read_generation_job(job_id: str) -> dict[str, object] | None:
+    with GENERATION_JOBS_LOCK:
+        job = GENERATION_JOBS.get(job_id)
+        return dict(job) if job else None
+
+
+def start_generation_job(material: str, mode_id: str, material_pack: object, config: dict[str, object]) -> str:
+    job_id = f"gen-{uuid.uuid4().hex[:12]}"
+    update_generation_job(
+        job_id,
+        {
+            "job_id": job_id,
+            "status": "running",
+            "created_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
+            "model": config["model"],
+        },
+    )
+
+    def run_job() -> None:
+        try:
+            response_payload = build_preview_payload(material, mode_id, material_pack)
+            prompt_bundle = str(response_payload["prompt_bundle"])
+            update_generation_job(job_id, {"status": "calling_model", "prompt_hash": hashlib.sha256(prompt_bundle.encode("utf-8")).hexdigest()[:16]})
+            board_memo = call_model(prompt_bundle, config)
+            result = attach_model_memo(response_payload, board_memo, config)
+            update_generation_job(
+                job_id,
+                {
+                    "status": "succeeded",
+                    "finished_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
+                    "result": result,
+                },
+            )
+        except Exception as exc:
+            update_generation_job(
+                job_id,
+                {
+                    "status": "failed",
+                    "finished_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
+                    "error": str(exc),
+                },
+            )
+
+    threading.Thread(target=run_job, daemon=True).start()
+    return job_id
+
+
 def build_material_pack_from_files(files: list[dict[str, object]]) -> dict[str, object]:
     combined_text = "\n\n".join(str(item.get("content", "")) for item in files)
     pack_id = stable_id("pack", combined_text[:500] or datetime.now(timezone.utc).isoformat())
@@ -413,6 +470,15 @@ class Handler(BaseHTTPRequestHandler):
                     self.end_headers()
                     self.wfile.write(body)
                     return
+        if parsed.path.startswith("/api/jobs/"):
+            parts = parsed.path.strip("/").split("/")
+            if len(parts) == 3:
+                job = read_generation_job(parts[2])
+                if not job:
+                    json_response(self, {"error": "job not found"}, HTTPStatus.NOT_FOUND)
+                    return
+                json_response(self, job)
+                return
         self.serve_static(parsed.path)
 
     def do_POST(self) -> None:
@@ -462,9 +528,20 @@ class Handler(BaseHTTPRequestHandler):
                 )
                 return
             try:
-                response_payload = build_preview_payload(material, mode_id, material_pack)
-                board_memo = call_model(str(response_payload["prompt_bundle"]), config)
-                json_response(self, attach_model_memo(response_payload, board_memo, config))
+                modes = load_modes(ROOT)
+                if mode_id not in modes:
+                    json_response(self, {"error": f"unknown mode: {mode_id}"}, HTTPStatus.BAD_REQUEST)
+                    return
+                job_id = start_generation_job(material, mode_id, material_pack, config)
+                json_response(
+                    self,
+                    {
+                        "job_id": job_id,
+                        "status": "running",
+                        "model": config["model"],
+                    },
+                    HTTPStatus.ACCEPTED,
+                )
             except ValueError as exc:
                 json_response(self, {"error": str(exc)}, HTTPStatus.BAD_REQUEST)
             except RuntimeError as exc:
