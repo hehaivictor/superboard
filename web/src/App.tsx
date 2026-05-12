@@ -42,6 +42,65 @@ const fallbackConfig: Config = {
   ]
 };
 
+const committeeLabels: Record<string, string> = {
+  "business-leaders": "商业领袖组",
+  "startup-mentors": "创业导师组",
+  "investment-masters": "投资大师组",
+  "consulting-elite": "咨询精英组",
+  "product-users": "产品与用户组"
+};
+
+const modeLabels: Record<string, string> = {
+  quick_triage: "快速审议",
+  deep_board_review: "深度董事会审议",
+  red_team: "红队反证审查",
+  pre_mortem: "事前验尸",
+  investment_committee: "投资委员会",
+  product_discovery: "产品发现审议",
+  go_to_market_review: "市场进入审议"
+};
+
+const fieldLabels: Record<string, string> = {
+  claim: "判断",
+  claim_type: "判断类型",
+  evidence_source: "证据来源",
+  confidence: "置信度",
+  counterevidence: "反向证据",
+  disproof_test: "反证实验",
+  assumption: "假设",
+  type: "类型",
+  checkpoints: "检查点",
+  decision_id: "决策编号",
+  created_at: "创建时间",
+  input_type: "输入类型",
+  mode_id: "审议模式",
+  title: "标题",
+  decision: "建议",
+  assumptions: "假设账本",
+  evidence_packets: "证据包",
+  follow_up_checkpoints: "复盘检查点",
+  day: "天数",
+  question: "问题"
+};
+
+const valueLabels: Record<string, string> = {
+  fact: "事实",
+  inference: "推断",
+  assumption: "假设",
+  process: "流程",
+  high: "高",
+  medium: "中",
+  low: "低",
+  unknown: "未识别",
+  product_requirement: "产品需求",
+  project_plan: "项目计划",
+  business_plan: "商业计划",
+  Pending: "待判断",
+  Go: "推进",
+  Pivot: "调整",
+  "No-Go": "不推进"
+};
+
 const sampleMaterial = `# AI 会议复盘助手
 
 目标：两周内把单场会议整理时间从 45 分钟降到 20 分钟以内。
@@ -54,6 +113,44 @@ const sampleMaterial = `# AI 会议复盘助手
 
 function Badge({ children }: { children: string }) {
   return <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-xs text-slate-600">{children}</span>;
+}
+
+function displayBoard(boardId: string) {
+  return boardId === "default" ? "默认董事会" : boardId;
+}
+
+function displayTemplate(version: string) {
+  return version === "local-fallback" ? "本地模板" : `模板版本 ${version}`;
+}
+
+function displayMode(modeId: string) {
+  return modeLabels[modeId] ?? modeId;
+}
+
+function displayCommittee(committeeId: string) {
+  return committeeLabels[committeeId] ?? committeeId;
+}
+
+function localizeValue(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(localizeValue);
+  }
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([key, entry]) => [
+        fieldLabels[key] ?? key,
+        localizeValue(entry)
+      ])
+    );
+  }
+  if (typeof value === "string") {
+    return modeLabels[value] ?? valueLabels[value] ?? value;
+  }
+  return value;
+}
+
+function formatJson(value: unknown) {
+  return JSON.stringify(localizeValue(value), null, 2);
 }
 
 function downloadText(filename: string, content: string) {
@@ -100,7 +197,7 @@ export function App() {
 
   async function handlePreview(event: FormEvent) {
     event.preventDefault();
-    setStatus("正在生成本地 prompt bundle");
+    setStatus("正在生成本地提示包");
     const response = await fetch("/api/preview", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -140,11 +237,11 @@ export function App() {
               <ShieldCheck size={16} />
               本地决策审议工作台
             </div>
-            <h1 className="text-2xl font-semibold tracking-normal">Super Board</h1>
+            <h1 className="text-2xl font-semibold tracking-normal">超级董事会</h1>
           </div>
           <div className="flex items-center gap-2">
-            <Badge>{config.board_id}</Badge>
-            <Badge>{config.template_version}</Badge>
+            <Badge>{displayBoard(config.board_id)}</Badge>
+            <Badge>{displayTemplate(config.template_version)}</Badge>
           </div>
         </div>
       </header>
@@ -168,7 +265,7 @@ export function App() {
           </select>
           <div className="rounded-md bg-slate-50 p-3 text-sm text-slate-600">{selectedMode?.description}</div>
           <div className="flex flex-wrap gap-2">
-            {(selectedMode?.enabled_committees ?? []).map((committee) => <Badge key={committee}>{committee}</Badge>)}
+            {(selectedMode?.enabled_committees ?? []).map((committee) => <Badge key={committee}>{displayCommittee(committee)}</Badge>)}
           </div>
           <label className="block text-sm font-medium text-slate-700" htmlFor="material">输入材料</label>
           <textarea
@@ -192,7 +289,7 @@ export function App() {
             <button
               type="button"
               disabled={!preview}
-              onClick={() => preview && downloadText("super-board-prompt-bundle.md", preview.prompt_bundle)}
+              onClick={() => preview && downloadText("超级董事会提示包.md", preview.prompt_bundle)}
               className="inline-flex items-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm disabled:opacity-40"
             >
               <Download size={15} />
@@ -200,7 +297,7 @@ export function App() {
             </button>
           </div>
           <pre className="h-[690px] overflow-auto whitespace-pre-wrap p-4 text-sm leading-6 text-slate-700">
-            {preview?.prompt_bundle ?? "生成预览后，这里会显示本地 prompt bundle。"}
+            {preview?.prompt_bundle ?? "生成预览后，这里会显示本地提示包。"}
           </pre>
         </section>
 
@@ -208,9 +305,9 @@ export function App() {
           <section className="rounded-lg border border-slate-200 bg-white">
             <div className="grid grid-cols-3 border-b border-slate-200 text-sm">
               {[
-                ["evidence", "Evidence"],
-                ["assumptions", "Assumptions"],
-                ["record", "Decision"]
+                ["evidence", "证据包"],
+                ["assumptions", "假设账本"],
+                ["record", "决策记录"]
               ].map(([id, label]) => (
                 <button
                   key={id}
@@ -224,13 +321,13 @@ export function App() {
             </div>
             <div className="min-h-[320px] p-4 text-sm leading-6 text-slate-700">
               {activeTab === "evidence" && (
-                <pre className="whitespace-pre-wrap">{JSON.stringify(preview?.evidence_packets ?? [], null, 2)}</pre>
+                <pre className="whitespace-pre-wrap">{formatJson(preview?.evidence_packets ?? [])}</pre>
               )}
               {activeTab === "assumptions" && (
-                <pre className="whitespace-pre-wrap">{JSON.stringify(preview?.assumptions ?? [], null, 2)}</pre>
+                <pre className="whitespace-pre-wrap">{formatJson(preview?.assumptions ?? [])}</pre>
               )}
               {activeTab === "record" && (
-                <pre className="whitespace-pre-wrap">{JSON.stringify(preview?.record ?? {}, null, 2)}</pre>
+                <pre className="whitespace-pre-wrap">{formatJson(preview?.record ?? {})}</pre>
               )}
             </div>
             <div className="border-t border-slate-200 p-4">
@@ -254,7 +351,7 @@ export function App() {
               {records.map((record) => (
                 <div key={record.decision_id} className="rounded-md border border-slate-200 p-3 text-sm">
                   <div className="font-medium">{record.title}</div>
-                  <div className="mt-1 text-xs text-slate-500">{record.decision_id} · {record.mode_id}</div>
+                  <div className="mt-1 text-xs text-slate-500">{record.decision_id} · {displayMode(record.mode_id)}</div>
                 </div>
               ))}
             </div>

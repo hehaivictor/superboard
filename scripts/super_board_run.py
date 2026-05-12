@@ -14,6 +14,33 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_MODE = "deep_board_review"
 
+COMMITTEE_LABELS = {
+    "business-leaders": "商业领袖组",
+    "startup-mentors": "创业导师组",
+    "investment-masters": "投资大师组",
+    "consulting-elite": "咨询精英组",
+    "product-users": "产品与用户组",
+}
+
+SECTION_LABELS = {
+    "Evidence Packet": "证据包",
+    "Assumption Ledger": "假设账本",
+    "Decision Log Entry": "决策记录条目",
+}
+
+DEPTH_LABELS = {
+    "quick": "快速",
+    "focused": "聚焦",
+    "deep": "深度",
+}
+
+INPUT_TYPE_LABELS = {
+    "product_requirement": "产品需求",
+    "project_plan": "项目计划",
+    "business_plan": "商业计划",
+    "unknown": "未识别",
+}
+
 
 def parse_mode(path: Path) -> dict[str, object]:
     mode: dict[str, object] = {}
@@ -99,12 +126,12 @@ def build_record(input_path: Path, text: str, mode: dict[str, object]) -> dict[s
         ],
         "evidence_packets": [
             {
-                "claim": "输入材料已装配为 Super Board prompt bundle。",
+                "claim": "输入材料已装配为超级董事会提示包。",
                 "claim_type": "fact",
                 "evidence_source": str(input_path),
                 "confidence": "high",
                 "counterevidence": "输入路径错误或文件内容为空。",
-                "disproof_test": "重新读取输入文件并核对 prompt bundle。",
+                "disproof_test": "重新读取输入文件并核对提示包。",
             }
         ],
         "follow_up_checkpoints": [
@@ -116,36 +143,44 @@ def build_record(input_path: Path, text: str, mode: dict[str, object]) -> dict[s
 
 
 def build_prompt_bundle(input_path: Path, text: str, mode: dict[str, object], record: dict[str, object]) -> str:
-    required_sections = "\n".join(f"- {section}" for section in mode.get("required_sections", []))
-    committees = "\n".join(f"- {committee}" for committee in mode.get("enabled_committees", []))
-    return f"""# Super Board Prompt Bundle
+    required_sections = "\n".join(
+        f"- {SECTION_LABELS.get(str(section), str(section))}" for section in mode.get("required_sections", [])
+    )
+    committees = "\n".join(
+        f"- {COMMITTEE_LABELS.get(str(committee), str(committee))}" for committee in mode.get("enabled_committees", [])
+    )
+    input_type = str(record["input_type"])
+    depth = str(mode.get("depth"))
+    include_appendix = "是" if mode.get("include_persona_appendix") else "否"
+    mode_name = str(mode.get("name", record["mode_id"]))
+    return f"""# 超级董事会提示包
 
-## Decision Record
+## 决策记录
 
 - 决策编号：{record["decision_id"]}
 - 标题：{record["title"]}
-- 输入类型：{record["input_type"]}
-- 审议模式：{record["mode_id"]}
+- 输入类型：{INPUT_TYPE_LABELS.get(input_type, input_type)}
+- 审议模式：{mode_name}
 
-## Mode
+## 审议模式
 
 - 名称：{mode.get("name")}
-- 深度：{mode.get("depth")}
-- 生成 persona 附录：{mode.get("include_persona_appendix")}
+- 深度：{DEPTH_LABELS.get(depth, depth)}
+- 生成人物附录：{include_appendix}
 
-## Enabled Committees
+## 启用委员会
 
 {committees}
 
-## Required Sections
+## 必选章节
 
 {required_sections}
 
-## Execution Instructions
+## 执行说明
 
-严格遵循 `protocols/board-review.md` 和 `templates/board-memo.md`。必须输出 Evidence Packet、Assumption Ledger 和 Decision Log Entry。不得编造外部数据、人物原话或模型运行结果。
+严格遵循 `protocols/board-review.md` 和 `templates/board-memo.md`。必须输出证据包、假设账本和决策记录条目。不得编造外部数据、人物原话或模型运行结果。
 
-## Input Material
+## 输入材料
 
 ```markdown
 {text.strip()}
@@ -188,17 +223,17 @@ def run(args: argparse.Namespace) -> int:
         write_json(Path(args.record).expanduser(), record)
 
     if args.dry_run:
-        print(f"dry-run prompt bundle generated for {record['decision_id']}")
+        print(f"已生成本地提示包：{record['decision_id']}")
     return 0
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Build a Super Board prompt bundle and decision record skeleton.")
-    parser.add_argument("--input", required=True, help="Markdown input file to review.")
-    parser.add_argument("--mode", default=DEFAULT_MODE, help=f"Review mode. Defaults to {DEFAULT_MODE}.")
-    parser.add_argument("--output", help="Path for the generated prompt bundle Markdown.")
-    parser.add_argument("--record", help="Path for the decision record JSON skeleton.")
-    parser.add_argument("--dry-run", action="store_true", help="Do not call any model; only generate local artifacts.")
+    parser = argparse.ArgumentParser(description="生成超级董事会本地提示包和决策记录骨架。")
+    parser.add_argument("--input", required=True, help="待审议的 Markdown 输入文件。")
+    parser.add_argument("--mode", default=DEFAULT_MODE, help=f"审议模式，默认 {DEFAULT_MODE}。")
+    parser.add_argument("--output", help="生成的提示包 Markdown 路径。")
+    parser.add_argument("--record", help="生成的决策记录 JSON 路径。")
+    parser.add_argument("--dry-run", action="store_true", help="不调用模型，只生成本地产物。")
     return run(parser.parse_args(argv))
 
 

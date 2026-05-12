@@ -145,7 +145,7 @@ class ValidateSkillTests(unittest.TestCase):
             self.assertEqual(0, result.returncode, result.stderr)
             bundle = output_path.read_text(encoding="utf-8")
             record = json.loads(record_path.read_text(encoding="utf-8"))
-            self.assertIn("Super Board Prompt Bundle", bundle)
+            self.assertIn("超级董事会提示包", bundle)
             self.assertEqual("deep_board_review", record["mode_id"])
             for field in ["decision_id", "created_at", "input_type", "assumptions", "evidence_packets"]:
                 self.assertIn(field, record)
