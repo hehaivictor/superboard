@@ -1,5 +1,5 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
-import { Download, FileText, Layers, RefreshCw, Save, ShieldCheck } from "lucide-react";
+import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
+import { Download, FileText, Layers, RefreshCw, Save, ShieldCheck, Upload } from "lucide-react";
 
 type Mode = {
   mode_id: string;
@@ -111,6 +111,14 @@ const sampleMaterial = `# AI 会议复盘助手
 
 风险：行动项负责人经常不明确，用户担心 AI 编造结论。`;
 
+const supportedUploadTypes = ".md,.markdown,.txt,.json,.csv,.yaml,.yml";
+
+function formatFileSize(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
 function Badge({ children }: { children: string }) {
   return <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-xs text-slate-600">{children}</span>;
 }
@@ -171,6 +179,7 @@ export function App() {
   const [records, setRecords] = useState<Array<Record<string, string>>>([]);
   const [activeTab, setActiveTab] = useState<"evidence" | "assumptions" | "record">("evidence");
   const [status, setStatus] = useState("本地工作台就绪");
+  const [inputFileName, setInputFileName] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/config")
@@ -210,6 +219,25 @@ export function App() {
     const payload = await response.json();
     setPreview(payload);
     setStatus("预览已生成，未调用外部模型");
+  }
+
+  function handleMaterialFile(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const content = typeof reader.result === "string" ? reader.result : "";
+      setMaterial(content);
+      setInputFileName(`${file.name} · ${formatFileSize(file.size)}`);
+      setPreview(null);
+      setStatus("文件已读取到输入材料，未上传到服务器");
+    };
+    reader.onerror = () => {
+      setStatus("文件读取失败，请确认它是文本文件");
+    };
+    reader.readAsText(file);
   }
 
   async function handleRecord() {
@@ -267,7 +295,24 @@ export function App() {
           <div className="flex flex-wrap gap-2">
             {(selectedMode?.enabled_committees ?? []).map((committee) => <Badge key={committee}>{displayCommittee(committee)}</Badge>)}
           </div>
-          <label className="block text-sm font-medium text-slate-700" htmlFor="material">输入材料</label>
+          <div className="flex items-center justify-between gap-3">
+            <label className="block text-sm font-medium text-slate-700" htmlFor="material">输入材料</label>
+            <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+              <Upload size={15} />
+              上传文件
+              <input
+                type="file"
+                accept={supportedUploadTypes}
+                className="sr-only"
+                onChange={handleMaterialFile}
+              />
+            </label>
+          </div>
+          {inputFileName && (
+            <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-500">
+              已读取：{inputFileName}
+            </div>
+          )}
           <textarea
             id="material"
             value={material}
