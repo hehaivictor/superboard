@@ -38,7 +38,7 @@ DECISION_LABELS = {
 }
 
 sys.path.insert(0, str(ROOT / "scripts"))
-from super_board_run import build_prompt_bundle, build_material_pack_from_text, build_record, load_modes  # noqa: E402
+from super_board_run import build_board_memo, build_material_pack_from_text, build_prompt_bundle, build_record, load_modes  # noqa: E402
 
 
 def template_version() -> str:
@@ -281,10 +281,13 @@ class Handler(BaseHTTPRequestHandler):
                 material_pack if isinstance(material_pack, dict) else None,
             )
             prompt_bundle = build_prompt_bundle(input_path, material, modes[mode_id], record)
+            board_memo = build_board_memo(input_path, material, modes[mode_id], record)
+            record["board_memo"] = board_memo
             json_response(
                 self,
                 {
                     "record": record,
+                    "board_memo": board_memo,
                     "prompt_bundle": prompt_bundle,
                     "evidence_packets": record["evidence_packets"],
                     "assumptions": record["assumptions"],

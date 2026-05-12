@@ -20,6 +20,7 @@ type Config = {
 
 type Preview = {
   record: Record<string, unknown>;
+  board_memo: string;
   prompt_bundle: string;
   evidence_packets: Array<Record<string, string>>;
   assumptions: Array<Record<string, unknown>>;
@@ -333,7 +334,7 @@ export function App() {
 
   async function handlePreview(event: FormEvent) {
     event.preventDefault();
-    setStatus("正在生成本地提示包");
+    setStatus("正在生成董事会建议书");
     const response = await fetch("/api/preview", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -345,7 +346,7 @@ export function App() {
     }
     const payload = await response.json();
     setPreview(payload);
-    setStatus("预览已生成，未调用外部模型");
+    setStatus("董事会建议书已生成，未调用外部模型");
   }
 
   async function handleMaterialFile(event: ChangeEvent<HTMLInputElement>) {
@@ -412,6 +413,7 @@ export function App() {
     const record = await response.json();
     setPreview({
       record,
+      board_memo: String(record.board_memo ?? "已加载本地决策记录。该记录没有保存董事会建议书正文。"),
       prompt_bundle: "已加载本地决策记录。可从右侧查看材料、证据、假设、流程和行动项。",
       evidence_packets: record.evidence_packets ?? [],
       assumptions: record.assumptions ?? [],
@@ -452,6 +454,16 @@ export function App() {
       return;
     }
     downloadText("超级董事会决策记录.md", renderRecordMarkdown(preview.record));
+  }
+
+  function exportBoardMemo() {
+    if (!preview) return;
+    downloadText("超级董事会建议书.md", preview.board_memo);
+  }
+
+  function exportPromptBundle() {
+    if (!preview) return;
+    downloadText("超级董事会提示包.md", preview.prompt_bundle);
   }
 
   return (
@@ -525,7 +537,7 @@ export function App() {
           />
           <button className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-slate-950 px-3 py-2 text-sm font-medium text-white">
             <RefreshCw size={16} />
-            生成预览
+            生成董事会建议书
           </button>
         </form>
 
@@ -533,20 +545,31 @@ export function App() {
           <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
             <div className="flex items-center gap-2">
               <FileText size={18} />
-              <h2 className="text-base font-semibold">审议预览</h2>
+              <h2 className="text-base font-semibold">董事会建议书</h2>
             </div>
-            <button
-              type="button"
-              disabled={!preview}
-              onClick={() => preview && downloadText("超级董事会提示包.md", preview.prompt_bundle)}
-              className="inline-flex items-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm disabled:opacity-40"
-            >
-              <Download size={15} />
-              导出
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                disabled={!preview}
+                onClick={exportPromptBundle}
+                className="inline-flex items-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm disabled:opacity-40"
+              >
+                <Download size={15} />
+                导出提示包
+              </button>
+              <button
+                type="button"
+                disabled={!preview}
+                onClick={exportBoardMemo}
+                className="inline-flex items-center gap-2 rounded-md bg-slate-950 px-3 py-2 text-sm text-white disabled:opacity-40"
+              >
+                <Download size={15} />
+                导出建议书
+              </button>
+            </div>
           </div>
           <pre className="h-[690px] overflow-auto whitespace-pre-wrap p-4 text-sm leading-6 text-slate-700">
-            {preview?.prompt_bundle ?? "生成预览后，这里会显示本地提示包。"}
+            {preview?.board_memo ?? "点击“生成董事会建议书”后，这里会显示可导出的董事会建议书草案。"}
           </pre>
         </section>
 
@@ -613,7 +636,7 @@ export function App() {
                       <div className="mt-1 text-xs text-slate-500">{stage.summary}</div>
                     </div>
                   ))}
-                  {!preview?.review_run && <div className="text-slate-500">生成预览后显示审议流程。</div>}
+                  {!preview?.review_run && <div className="text-slate-500">生成董事会建议书后显示审议流程。</div>}
                 </div>
               )}
               {activeTab === "record" && (

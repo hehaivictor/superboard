@@ -193,6 +193,12 @@ class ValidateSkillTests(unittest.TestCase):
             modes["synthetic_user_panel"],
             record,
         )
+        memo = super_board_run.build_board_memo(
+            ROOT / "examples" / "product-requirement.md",
+            text,
+            modes["synthetic_user_panel"],
+            record,
+        )
 
         self.assertEqual("synthetic_user_panel", record["mode_id"])
         self.assertEqual("自定义材料包", record["material_pack"]["title"])
@@ -202,6 +208,10 @@ class ValidateSkillTests(unittest.TestCase):
         self.assertIn("## 来源块", bundle)
         self.assertIn("src-001 · a.md", bundle)
         self.assertIn("等待模型", bundle)
+        self.assertIn("# 《董事会建议书》：自定义材料包", memo)
+        self.assertIn("## 证据包", memo)
+        self.assertIn("未调用外部模型", memo)
+        self.assertIn("src-001 · a.md", memo)
 
     def test_followup_script_generates_checkpoint_prompt(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

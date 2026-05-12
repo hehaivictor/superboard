@@ -52,6 +52,13 @@ STATUS_LABELS = {
     "failed": "失败",
 }
 
+DECISION_LABELS = {
+    "Pending": "待判断",
+    "Go": "推进",
+    "Pivot": "调整",
+    "No-Go": "不推进",
+}
+
 REVIEW_STAGES = [
     ("material_breakdown", "材料拆解", "已生成材料包和来源块。"),
     ("independent_review", "独立审阅", "等待模型按委员会契约独立审阅。"),
@@ -346,6 +353,113 @@ def build_prompt_bundle(input_path: Path, text: str, mode: dict[str, object], re
 
 ```markdown
 {text.strip()}
+```
+"""
+
+
+def source_block_summary(record: dict[str, object], limit: int = 5) -> str:
+    material_pack = record.get("material_pack", {})
+    blocks = material_pack.get("source_blocks", []) if isinstance(material_pack, dict) else []
+    lines = []
+    for block in blocks[:limit]:
+        if not isinstance(block, dict):
+            continue
+        excerpt = str(block.get("text", "")).strip().replace("\n", " ")
+        if len(excerpt) > 180:
+            excerpt = excerpt[:180] + "..."
+        lines.append(f"- {block.get('block_id')} · {block.get('source_file')}：{excerpt}")
+    return "\n".join(lines) or "- 暂无来源块"
+
+
+def build_board_memo(input_path: Path, text: str, mode: dict[str, object], record: dict[str, object]) -> str:
+    """Generate a local board memo draft without calling an external model."""
+    mode_id = str(record.get("mode_id", ""))
+    input_type = str(record.get("input_type", "unknown"))
+    source = first_source_block(record.get("material_pack", {}) if isinstance(record.get("material_pack"), dict) else {})
+    source_block_id = str(source.get("block_id", "src-000"))
+    title = str(record.get("title", extract_title(text, input_path)))
+    decision = str(record.get("decision", "Pending"))
+    committees = "\n".join(
+        f"- {COMMITTEE_LABELS.get(str(committee), str(committee))}" for committee in mode.get("enabled_committees", [])
+    )
+    required_sections = "\n".join(
+        f"- {SECTION_LABELS.get(str(section), str(section))}" for section in mode.get("required_sections", [])
+    )
+    evidence = record.get("evidence_packets", [])
+    assumptions = record.get("assumptions", [])
+    checkpoints = record.get("follow_up_checkpoints", [])
+    actions = record.get("action_items", [])
+
+    return f"""# 《董事会建议书》：{title}
+
+## 生成说明
+
+- 生成方式：本地结构化建议书草案，未调用外部模型。
+- 决策编号：{record.get("decision_id", "")}
+- 审议模式：{mode.get("name", mode_id)}
+- 输入类型：{INPUT_TYPE_LABELS.get(input_type, input_type)}
+- 当前建议：{DECISION_LABELS.get(decision, decision)}
+
+## 一页结论
+
+当前材料已经可以进入董事会审议，但还不足以直接给出“推进 / 调整 / 不推进”的最终裁决。建议先把本材料作为审议底稿，围绕证据强度、关键假设和反证实验补齐验证，再形成最终决策。
+
+依据：输入材料已被拆解为来源块，首个可引用来源为 `{source_block_id}`。所有后续判断都应继续绑定来源块，避免把推断写成事实。
+
+## 输入材料结构化拆解
+
+### 来源块摘要
+
+{source_block_summary(record)}
+
+### 启用委员会
+
+{committees or "- 暂无启用委员会"}
+
+### 本模式要求输出
+
+{required_sections or "- 暂无必选章节"}
+
+## 证据包
+
+```json
+{json.dumps(evidence, ensure_ascii=False, indent=2)}
+```
+
+## 假设账本
+
+```json
+{json.dumps(assumptions, ensure_ascii=False, indent=2)}
+```
+
+## 反证实验
+
+1. 核对每条核心判断是否能回溯到来源块；无法回溯的内容必须降级为推断或假设。
+2. 要求反方审查只寻找最强反例：用户是否真的需要、成本是否被低估、替代方案是否更便宜。
+3. 在 30 / 60 / 90 天检查点复盘实际结果，记录哪些委员会判断反复有效。
+
+## 推进 / 调整 / 不推进条件
+
+- 推进：关键假设获得直接证据支持，且风险已有负责人和验证节奏。
+- 调整：目标仍成立，但范围、用户、定价、交付路径或证据链需要调整。
+- 不推进：核心用户需求、商业价值或执行约束无法通过反证实验。
+
+## 30 / 60 / 90 天检查点
+
+```json
+{json.dumps(checkpoints, ensure_ascii=False, indent=2)}
+```
+
+## 行动项
+
+```json
+{json.dumps(actions, ensure_ascii=False, indent=2)}
+```
+
+## 决策记录条目
+
+```json
+{json.dumps(record, ensure_ascii=False, indent=2)}
 ```
 """
 
