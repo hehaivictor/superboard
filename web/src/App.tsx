@@ -310,6 +310,7 @@ export function App() {
   const [activeTab, setActiveTab] = useState<"materials" | "evidence" | "assumptions" | "flow" | "record">("materials");
   const [status, setStatus] = useState("本地工作台就绪");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generationError, setGenerationError] = useState<string | null>(null);
   const [inputFileName, setInputFileName] = useState<string | null>(null);
   const [materialPack, setMaterialPack] = useState<MaterialPack | null>(null);
 
@@ -331,15 +332,19 @@ export function App() {
   async function generateModelMemo() {
     const llm = config.llm;
     if (!llm?.configured) {
-      setStatus(`模型未配置：${llm?.missing?.join("，") ?? "缺少 API 配置"}`);
+      const message = `模型未配置：${llm?.missing?.join("，") ?? "缺少 API 配置"}`;
+      setStatus(message);
+      setGenerationError(message);
       return;
     }
     if (!material.trim()) {
       setStatus("请先上传或输入材料");
+      setGenerationError("请先上传或输入材料，然后再调用模型生成建议书。");
       return;
     }
     setIsGenerating(true);
     setStatus(`正在调用模型生成董事会建议书：${llm.model}`);
+    setGenerationError(null);
     setPreview(null);
     try {
       const response = await fetch("/api/generate", {
@@ -349,11 +354,18 @@ export function App() {
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
-        setStatus(String(payload.error ?? "模型生成失败"));
+        const message = String(payload.error ?? "模型生成失败");
+        setStatus(message);
+        setGenerationError(message);
         return;
       }
       setPreview(payload);
       setStatus(`模型建议书已生成：${payload.generation?.model ?? llm.model}`);
+      setGenerationError(null);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "模型请求失败";
+      setStatus(message);
+      setGenerationError(`模型请求失败：${message}`);
     } finally {
       setIsGenerating(false);
     }
@@ -556,6 +568,13 @@ export function App() {
               <div>
                 <div className="font-medium text-slate-900">正在生成董事会建议书</div>
                 <div className="mt-1 text-slate-500">已向 {config.llm?.model ?? "模型"} 提交审议请求，等待模型返回。</div>
+              </div>
+            </div>
+          ) : generationError ? (
+            <div className="h-[690px] overflow-auto p-4 text-sm leading-6">
+              <div className="rounded-md border border-red-200 bg-red-50 p-4 text-red-800">
+                <div className="font-medium">生成失败</div>
+                <div className="mt-1 whitespace-pre-wrap">{generationError}</div>
               </div>
             </div>
           ) : (
