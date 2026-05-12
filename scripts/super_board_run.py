@@ -267,7 +267,7 @@ def build_record(
         ],
         "follow_up_checkpoints": [
             {"day": 30, "question": "关键假设是否已有真实证据？"},
-            {"day": 60, "question": "Go / Pivot / No-Go 条件是否被触发？"},
+            {"day": 60, "question": "推进 / 调整 / 不推进条件是否被触发？"},
             {"day": 90, "question": "是否需要校准委员会判断？"},
         ],
         "calibration_events": [
