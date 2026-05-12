@@ -1,4 +1,4 @@
-import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, useEffect, useMemo, useState } from "react";
 import { Download, FileText, Layers, RefreshCw, Save, ShieldCheck, Upload } from "lucide-react";
 
 type Mode = {
@@ -197,16 +197,6 @@ const valueLabels: Record<string, string> = {
   pending_followup: "等待复盘"
 };
 
-const sampleMaterial = `# AI 会议复盘助手
-
-目标：两周内把单场会议整理时间从 45 分钟降到 20 分钟以内。
-
-用户：一线产品经理和产品负责人。
-
-约束：第一版只支持手动上传会议转写文本，不接 IM、日历、CRM 或任务系统。
-
-风险：行动项负责人经常不明确，用户担心 AI 编造结论。`;
-
 const supportedUploadTypes = ".md,.markdown,.txt,.json,.csv,.yaml,.yml";
 
 function formatFileSize(bytes: number) {
@@ -217,14 +207,6 @@ function formatFileSize(bytes: number) {
 
 function Badge({ children }: { children: string }) {
   return <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-xs text-slate-600">{children}</span>;
-}
-
-function displayBoard(boardId: string) {
-  return boardId === "default" ? "默认董事会" : boardId;
-}
-
-function displayTemplate(version: string) {
-  return version === "local-fallback" ? "本地模板" : `模板版本 ${version}`;
 }
 
 function displayModel(config: Config) {
@@ -323,11 +305,11 @@ function assumptionRows(preview: Preview | null) {
 export function App() {
   const [config, setConfig] = useState<Config>(fallbackConfig);
   const [modeId, setModeId] = useState("deep_board_review");
-  const [material, setMaterial] = useState(sampleMaterial);
+  const [material, setMaterial] = useState("");
   const [preview, setPreview] = useState<Preview | null>(null);
-  const [records, setRecords] = useState<Array<Record<string, string>>>([]);
   const [activeTab, setActiveTab] = useState<"materials" | "evidence" | "assumptions" | "flow" | "record">("materials");
   const [status, setStatus] = useState("本地工作台就绪");
+  const [isGenerating, setIsGenerating] = useState(false);
   const [inputFileName, setInputFileName] = useState<string | null>(null);
   const [materialPack, setMaterialPack] = useState<MaterialPack | null>(null);
 
@@ -339,7 +321,6 @@ export function App() {
         setModeId(payload.modes[0]?.mode_id ?? "deep_board_review");
       })
       .catch(() => setConfig(fallbackConfig));
-    refreshRecords();
   }, []);
 
   const selectedMode = useMemo(
@@ -347,53 +328,35 @@ export function App() {
     [config.modes, modeId]
   );
 
-  function refreshRecords() {
-    fetch("/api/records")
-      .then((response) => response.ok ? response.json() : { records: [] })
-      .then((payload) => setRecords(payload.records ?? []))
-      .catch(() => setRecords([]));
-  }
-
-  async function handlePreview(event: FormEvent) {
-    event.preventDefault();
-    await generateLocalDraft();
-  }
-
-  async function generateLocalDraft() {
-    setStatus("正在生成本地草案");
-    const response = await fetch("/api/preview", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ material, mode_id: modeId, material_pack: materialPack })
-    });
-    if (!response.ok) {
-      setStatus("本地草案生成失败，请检查本地 API");
-      return;
-    }
-    const payload = await response.json();
-    setPreview(payload);
-    setStatus("本地草案已生成，未调用模型");
-  }
-
   async function generateModelMemo() {
     const llm = config.llm;
     if (!llm?.configured) {
       setStatus(`模型未配置：${llm?.missing?.join("，") ?? "缺少 API 配置"}`);
       return;
     }
-    setStatus(`正在调用模型生成董事会建议书：${llm.model}`);
-    const response = await fetch("/api/generate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ material, mode_id: modeId, material_pack: materialPack })
-    });
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      setStatus(String(payload.error ?? "模型生成失败"));
+    if (!material.trim()) {
+      setStatus("请先上传或输入材料");
       return;
     }
-    setPreview(payload);
-    setStatus(`模型建议书已生成：${payload.generation?.model ?? llm.model}`);
+    setIsGenerating(true);
+    setStatus(`正在调用模型生成董事会建议书：${llm.model}`);
+    setPreview(null);
+    try {
+      const response = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ material, mode_id: modeId, material_pack: materialPack })
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setStatus(String(payload.error ?? "模型生成失败"));
+        return;
+      }
+      setPreview(payload);
+      setStatus(`模型建议书已生成：${payload.generation?.model ?? llm.model}`);
+    } finally {
+      setIsGenerating(false);
+    }
   }
 
   async function handleMaterialFile(event: ChangeEvent<HTMLInputElement>) {
@@ -448,30 +411,6 @@ export function App() {
       return;
     }
     setStatus("记录已写入 records/，默认不进入 git");
-    refreshRecords();
-  }
-
-  async function handleLoadRecord(decisionId: string) {
-    const response = await fetch(`/api/records/${decisionId}`);
-    if (!response.ok) {
-      setStatus("记录读取失败");
-      return;
-    }
-    const record = await response.json();
-    setPreview({
-      record,
-      board_memo: String(record.board_memo ?? "已加载本地决策记录。该记录没有保存董事会建议书正文。"),
-      prompt_bundle: "已加载本地决策记录。可从右侧查看材料、证据、假设、流程和行动项。",
-      evidence_packets: record.evidence_packets ?? [],
-      assumptions: record.assumptions ?? [],
-      material_pack: record.material_pack,
-      review_run: record.review_run,
-      action_items: record.action_items ?? [],
-      calibration_events: record.calibration_events ?? []
-    });
-    setMaterialPack(record.material_pack ?? null);
-    setActiveTab("record");
-    setStatus("已加载本地决策记录");
   }
 
   async function handleCalibration() {
@@ -508,11 +447,6 @@ export function App() {
     downloadText("超级董事会建议书.md", preview.board_memo);
   }
 
-  function exportPromptBundle() {
-    if (!preview) return;
-    downloadText("超级董事会提示包.md", preview.prompt_bundle);
-  }
-
   return (
     <main className="min-h-screen bg-[#f8fafc] text-slate-950">
       <header className="border-b border-slate-200 bg-white">
@@ -525,15 +459,13 @@ export function App() {
             <h1 className="text-2xl font-semibold tracking-normal">超级董事会</h1>
           </div>
           <div className="flex items-center gap-2">
-            <Badge>{displayBoard(config.board_id)}</Badge>
-            <Badge>{displayTemplate(config.template_version)}</Badge>
             <Badge>{displayModel(config)}</Badge>
           </div>
         </div>
       </header>
 
       <section className="mx-auto grid max-w-7xl grid-cols-1 gap-4 px-5 py-5 lg:grid-cols-[360px_minmax(0,1fr)_360px]">
-        <form onSubmit={handlePreview} className="space-y-4 rounded-lg border border-slate-200 bg-white p-4">
+        <form className="space-y-4 rounded-lg border border-slate-200 bg-white p-4">
           <div className="flex items-center gap-2">
             <Layers size={18} />
             <h2 className="text-base font-semibold">材料与模式</h2>
@@ -581,27 +513,22 @@ export function App() {
             id="material"
             value={material}
             onChange={(event) => setMaterial(event.target.value)}
+            placeholder="粘贴审议材料，或点击上方上传文件。"
             className="min-h-[420px] w-full resize-y rounded-md border border-slate-300 px-3 py-2 font-mono text-sm leading-6"
           />
-          {config.llm && !config.llm.configured && (
-            <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-              模型未配置：设置 {config.llm.missing.join("，")}，或创建 {config.llm.config_file}。
-            </div>
-          )}
           <div className="grid grid-cols-1 gap-2">
             <button
               type="button"
               onClick={generateModelMemo}
-              disabled={!config.llm?.configured}
+              disabled={!config.llm?.configured || isGenerating}
               className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-slate-950 px-3 py-2 text-sm font-medium text-white disabled:opacity-40"
             >
-              <RefreshCw size={16} />
-              调用模型生成建议书
+              <RefreshCw size={16} className={isGenerating ? "animate-spin" : ""} />
+              {isGenerating ? "正在生成建议书..." : "调用模型生成建议书"}
             </button>
-            <button className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700">
-              <FileText size={16} />
-              只生成本地草案
-            </button>
+          </div>
+          <div className={`rounded-md px-3 py-2 text-xs ${isGenerating ? "border border-blue-200 bg-blue-50 text-blue-800" : "border border-slate-200 bg-slate-50 text-slate-600"}`}>
+            {isGenerating ? `正在调用 ${config.llm?.model ?? "模型"}，生成通常需要几十秒，请勿重复点击。` : status}
           </div>
         </form>
 
@@ -615,15 +542,6 @@ export function App() {
               <button
                 type="button"
                 disabled={!preview}
-                onClick={exportPromptBundle}
-                className="inline-flex items-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm disabled:opacity-40"
-              >
-                <Download size={15} />
-                导出提示包
-              </button>
-              <button
-                type="button"
-                disabled={!preview}
                 onClick={exportBoardMemo}
                 className="inline-flex items-center gap-2 rounded-md bg-slate-950 px-3 py-2 text-sm text-white disabled:opacity-40"
               >
@@ -632,9 +550,19 @@ export function App() {
               </button>
             </div>
           </div>
-          <pre className="h-[690px] overflow-auto whitespace-pre-wrap p-4 text-sm leading-6 text-slate-700">
-            {preview?.board_memo ?? "点击“调用模型生成建议书”后，这里会显示大模型生成的董事会建议书；未配置模型时只能生成本地草案。"}
-          </pre>
+          {isGenerating ? (
+            <div className="flex h-[690px] items-start gap-3 p-4 text-sm leading-6 text-slate-700">
+              <RefreshCw size={18} className="mt-1 animate-spin text-slate-500" />
+              <div>
+                <div className="font-medium text-slate-900">正在生成董事会建议书</div>
+                <div className="mt-1 text-slate-500">已向 {config.llm?.model ?? "模型"} 提交审议请求，等待模型返回。</div>
+              </div>
+            </div>
+          ) : (
+            <pre className="h-[690px] overflow-auto whitespace-pre-wrap p-4 text-sm leading-6 text-slate-700">
+              {preview?.board_memo ?? "上传或输入材料后，点击“调用模型生成建议书”。"}
+            </pre>
+          )}
         </section>
 
         <aside className="space-y-4">
@@ -725,22 +653,6 @@ export function App() {
                 <Save size={16} />
                 写入记录
               </button>
-            </div>
-          </section>
-
-          <section className="rounded-lg border border-slate-200 bg-white p-4">
-            <h2 className="text-base font-semibold">历史记录</h2>
-            <p className="mt-1 text-sm text-slate-500">{status}</p>
-            <div className="mt-4 space-y-2">
-              {records.length === 0 && <div className="text-sm text-slate-500">暂无本地记录</div>}
-              {records.map((record) => (
-                <div key={record.decision_id} className="rounded-md border border-slate-200 p-3 text-sm">
-                  <button type="button" onClick={() => handleLoadRecord(record.decision_id)} className="w-full text-left">
-                    <div className="font-medium">{record.title}</div>
-                    <div className="mt-1 text-xs text-slate-500">{record.decision_id} · {displayMode(record.mode_id)}</div>
-                  </button>
-                </div>
-              ))}
             </div>
           </section>
         </aside>
