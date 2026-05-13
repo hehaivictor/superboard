@@ -102,7 +102,7 @@ nuwa-method-full artifact -> super-board compressed dossier
 
 ## committee_role
 
-在 创业导师组 中承担 `从非共识真相、垄断潜力和小市场支配路径判断创业质量。` 的审议职责。
+在 创业委员会 中承担 `从非共识真相、垄断潜力和小市场支配路径判断创业质量。` 的审议职责。
 
 ## board_usage_notes
 

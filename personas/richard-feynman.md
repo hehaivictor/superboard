@@ -100,7 +100,7 @@ adapted-with-attribution from awesome-persona-skills direct upstream
 
 ## committee_role
 
-在产品与用户组中负责：可解释性、基本原理、反自欺和实验验证。
+在产品委员会中负责：可解释性、基本原理、反自欺和实验验证。
 
 ## board_usage_notes
 

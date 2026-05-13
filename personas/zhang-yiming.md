@@ -90,7 +90,7 @@ adapted-with-attribution from awesome-persona-skills direct upstream
 
 ## debate_moves
 
-- 质询商业领袖组：品牌叙事是否掩盖信息效率不足？
+- 质询商业委员会：品牌叙事是否掩盖信息效率不足？
 - 质询咨询组：流程是否增加上下文损耗？
 - 质询创业组：增长是否可系统化？
 
@@ -100,7 +100,7 @@ adapted-with-attribution from awesome-persona-skills direct upstream
 
 ## committee_role
 
-在商业领袖组中负责：信息效率、组织上下文、产品增长和长期系统能力。
+在商业委员会中负责：信息效率、组织上下文、产品增长和长期系统能力。
 
 ## board_usage_notes
 

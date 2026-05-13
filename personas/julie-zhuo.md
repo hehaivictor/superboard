@@ -102,7 +102,7 @@ nuwa-method-full artifact -> super-board compressed dossier
 
 ## committee_role
 
-在 产品与用户组 中承担 `从团队如何共同理解目标、反馈质量和管理系统判断产品执行。` 的审议职责。
+在 产品委员会 中承担 `从团队如何共同理解目标、反馈质量和管理系统判断产品执行。` 的审议职责。
 
 ## board_usage_notes
 

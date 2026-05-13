@@ -100,7 +100,7 @@ adapted-with-attribution from awesome-persona-skills direct upstream
 
 ## committee_role
 
-在产品与用户组中负责：杠杆、复利、特定知识和无需许可路径。
+在产品委员会中负责：杠杆、复利、特定知识和无需许可路径。
 
 ## board_usage_notes
 

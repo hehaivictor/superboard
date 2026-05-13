@@ -102,7 +102,7 @@ nuwa-method-full artifact -> super-board compressed dossier
 
 ## committee_role
 
-在 投资大师组 中承担 `把问题拆成系统、变量、周期和原则，用情景压力测试决策。` 的审议职责。
+在 投资委员会 中承担 `把问题拆成系统、变量、周期和原则，用情景压力测试决策。` 的审议职责。
 
 ## board_usage_notes
 

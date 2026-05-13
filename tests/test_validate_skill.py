@@ -31,6 +31,13 @@ super_board_server = importlib.util.module_from_spec(server_spec)
 assert server_spec.loader is not None
 server_spec.loader.exec_module(super_board_server)
 
+AUDIT_PATH = ROOT / "scripts" / "audit_board_memo.py"
+audit_spec = importlib.util.spec_from_file_location("audit_board_memo", AUDIT_PATH)
+audit_board_memo = importlib.util.module_from_spec(audit_spec)
+assert audit_spec.loader is not None
+sys.modules["audit_board_memo"] = audit_board_memo
+audit_spec.loader.exec_module(audit_board_memo)
+
 
 def write(path: Path, content: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -363,6 +370,91 @@ class ValidateSkillTests(unittest.TestCase):
 
         self.assertFalse(super_board_server.board_memo_is_complete(incomplete))
         self.assertTrue(super_board_server.board_memo_is_complete(complete))
+
+    def test_numbered_chinese_headings_count_as_required_sections(self) -> None:
+        numbered = "\n\n".join(
+            [
+                "# 《董事会建议书》",
+                "## 一、输入类型与审议范围",
+                "## 二、一句话结论",
+                "## 三、Go / No-Go / Pivot 建议",
+                "## 四、核心判断",
+                "## 五、证据包",
+                "## 六、假设账本",
+                "## 七、各委员会结论",
+                "## 八、跨委员会共识",
+                "## 九、关键分歧",
+                "## 十、最大机会",
+                "## 十一、最大风险",
+                "## 十二、建议行动清单",
+                "## 十三、需要补充验证的问题",
+                "## 十四、人物附录：委员会审议角色画像",
+                "## 十五、决策记录条目",
+            ]
+        )
+
+        self.assertEqual([], super_board_server.board_memo_missing_markers(numbered))
+        self.assertTrue(super_board_server.board_memo_is_complete(numbered))
+
+    def test_duplicate_restart_after_decision_record_is_detected(self) -> None:
+        duplicated = "\n\n".join(
+            [
+                "# 《董事会建议书》",
+                "## 十三、最终董事会建议",
+                "## 十四、决策记录条目",
+                "| 字段 | 内容 |",
+                "## 十五、人物附录：委员会审议角色画像",
+                "## 输入类型与审议范围",
+                "## 一句话结论",
+            ]
+        )
+
+        self.assertTrue(super_board_server.board_memo_has_duplicate_restart(duplicated))
+
+    def test_merge_model_parts_drops_duplicate_restart_sections(self) -> None:
+        first_part = "\n\n".join(
+            [
+                "# 《董事会建议书》",
+                "## 输入类型与审议范围",
+                "原始范围",
+                "## 一句话结论",
+                "原始结论",
+                "## 十四、决策记录条目",
+                "原始记录",
+            ]
+        )
+        continuation = "\n\n".join(
+            [
+                "## 输入类型与审议范围",
+                "重复范围",
+                "## 核心判断",
+                "新增判断",
+            ]
+        )
+
+        merged = super_board_server.merge_model_parts([first_part, continuation])
+
+        self.assertIn("原始范围", merged)
+        self.assertNotIn("重复范围", merged)
+        self.assertIn("新增判断", merged)
+
+    def test_audit_script_flags_exported_duplicate_restart(self) -> None:
+        duplicated = "\n\n".join(
+            [
+                "# 《董事会建议书》",
+                "## 十三、最终董事会建议",
+                "## 十四、决策记录条目",
+                "记录",
+                "## 十五、人物附录：委员会审议角色画像",
+                "附录",
+                "## 输入类型与审议范围",
+                "重复开始",
+            ]
+        )
+
+        issues = audit_board_memo.audit_text(duplicated)
+
+        self.assertTrue(any(issue["code"] == "duplicate_restart" for issue in issues))
 
     def test_call_model_continues_when_stream_finishes_by_length(self) -> None:
         first_part = "# 《董事会建议书》\n\n## 输入类型与审议范围\n\n开头内容。"

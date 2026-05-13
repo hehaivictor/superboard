@@ -73,23 +73,23 @@ flowchart LR
 
 ## 各委员会结论
 
-### 商业领袖组
+### 商业委员会
 
 {{business_leaders_summary}}
 
-### 创业导师组
+### 创业委员会
 
 {{startup_mentors_summary}}
 
-### 投资大师组
+### 投资委员会
 
 {{investment_masters_summary}}
 
-### 咨询精英组
+### 咨询委员会
 
 {{consulting_elite_summary}}
 
-### 产品与用户组
+### 产品委员会
 
 {{product_users_summary}}
 
@@ -97,11 +97,11 @@ flowchart LR
 
 ```mermaid
 flowchart TD
-  A["最终建议：{{decision}}"] --> B["商业领袖组：{{business_signal}}"]
-  A --> C["创业导师组：{{startup_signal}}"]
-  A --> D["投资大师组：{{investment_signal}}"]
-  A --> E["咨询精英组：{{consulting_signal}}"]
-  A --> F["产品与用户组：{{product_signal}}"]
+  A["最终建议：{{decision}}"] --> B["商业委员会：{{business_signal}}"]
+  A --> C["创业委员会：{{startup_signal}}"]
+  A --> D["投资委员会：{{investment_signal}}"]
+  A --> E["咨询委员会：{{consulting_signal}}"]
+  A --> F["产品委员会：{{product_signal}}"]
   B --> G["强共识：{{strong_consensus_signal}}"]
   C --> G
   D --> H["少数派警告：{{minority_warning_signal}}"]

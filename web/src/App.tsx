@@ -102,11 +102,11 @@ const fallbackConfig: Config = {
 };
 
 const committeeLabels: Record<string, string> = {
-  "business-leaders": "商业领袖组",
-  "startup-mentors": "创业导师组",
-  "investment-masters": "投资大师组",
-  "consulting-elite": "咨询精英组",
-  "product-users": "产品与用户组"
+  "business-leaders": "商业委员会",
+  "startup-mentors": "创业委员会",
+  "investment-masters": "投资委员会",
+  "consulting-elite": "咨询委员会",
+  "product-users": "产品委员会"
   , "synthetic-users": "用户模拟组"
 };
 

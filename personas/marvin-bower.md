@@ -102,7 +102,7 @@ nuwa-method-full artifact -> super-board compressed dossier
 
 ## committee_role
 
-在 咨询精英组 中承担 `从客户利益、专业标准、事实基础和管理层可执行建议判断方案质量。` 的审议职责。
+在 咨询委员会 中承担 `从客户利益、专业标准、事实基础和管理层可执行建议判断方案质量。` 的审议职责。
 
 ## board_usage_notes
 

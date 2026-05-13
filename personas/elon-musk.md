@@ -103,7 +103,7 @@ adapted-with-attribution from awesome-persona-skills direct upstream
 
 ## committee_role
 
-在商业领袖组中负责：第一性原理、工程约束、成本曲线和迭代速度。
+在商业委员会中负责：第一性原理、工程约束、成本曲线和迭代速度。
 
 ## board_usage_notes
 

@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import mimetypes
 import os
+import re
 import sys
 import hashlib
 import threading
@@ -30,24 +31,28 @@ DEFAULT_MODEL_TIMEOUT = 240
 DEFAULT_MODEL_MAX_TOKENS = 16000
 DEFAULT_MODEL_CONTINUATIONS = 3
 
-BOARD_MEMO_REQUIRED_MARKERS = [
-    "# 《董事会建议书》",
-    "## 输入类型与审议范围",
-    "## 一句话结论",
-    "## Go / No-Go / Pivot 建议",
-    "## 核心判断",
-    "## 证据包",
-    "## 假设账本",
-    "## 各委员会结论",
-    "## 跨委员会共识",
-    "## 关键分歧",
-    "## 最大机会",
-    "## 最大风险",
-    "## 建议行动清单",
-    "## 需要补充验证的问题",
-    "## 附录：各 Persona 关键意见摘要",
-    "## 决策记录条目",
+BOARD_MEMO_REQUIRED_SECTION_GROUPS = [
+    ("# 《董事会建议书》", ["# 《董事会建议书》"]),
+    ("输入类型与审议范围", ["输入类型与审议范围", "输入材料结构化拆解"]),
+    ("一句话结论", ["一句话结论", "董事会结论摘要", "最终董事会建议"]),
+    ("Go / No-Go / Pivot 建议", ["Go / No-Go / Pivot 建议", "推进 / 调整 / 不推进条件", "最终董事会建议"]),
+    ("核心判断", ["核心判断", "董事会核心判断"]),
+    ("证据包", ["证据包"]),
+    ("假设账本", ["假设账本"]),
+    ("各委员会结论", ["各委员会结论"]),
+    ("跨委员会共识", ["跨委员会共识", "综合信号"]),
+    ("关键分歧", ["关键分歧"]),
+    ("最大机会", ["最大机会"]),
+    ("最大风险", ["最大风险", "重大风险与缓释措施"]),
+    ("建议行动清单", ["建议行动清单", "90 天行动方案"]),
+    ("需要补充验证的问题", ["需要补充验证的问题", "关键反证问题", "反证实验设计"]),
+    ("附录：各 Persona 关键意见摘要", ["附录：各 Persona 关键意见摘要", "人物附录：委员会审议角色画像"]),
+    ("决策记录条目", ["决策记录条目"]),
 ]
+
+BOARD_MEMO_CANONICAL_SECTIONS = [section for section, _aliases in BOARD_MEMO_REQUIRED_SECTION_GROUPS]
+BOARD_MEMO_RESTART_SECTIONS = {"输入类型与审议范围", "一句话结论", "核心判断", "证据包", "假设账本", "各委员会结论"}
+BOARD_MEMO_TERMINAL_SECTIONS = {"决策记录条目", "附录：各 Persona 关键意见摘要"}
 
 MODE_LABELS = {
     "quick_triage": "快速审议",
@@ -187,14 +192,99 @@ def normalize_model_error(status_code: int, detail: str) -> str:
     return f"模型接口返回 {status_code}：{message or detail}"
 
 
+def strip_heading_numbering(heading: str) -> str:
+    text = heading.strip()
+    text = re.sub(r"^\s*第[一二三四五六七八九十百千万零〇两]+[章节部分]?[、.．:：\s-]*", "", text)
+    text = re.sub(r"^\s*[一二三四五六七八九十百千万零〇两]+[、.．:：\s-]+", "", text)
+    text = re.sub(r"^\s*\d+[\.\)、:：\s-]+", "", text)
+    text = re.sub(r"^[A-Z][\.\)、:：\s-]+", "", text)
+    return text.strip()
+
+
+def normalize_board_memo_heading(heading: str) -> str:
+    text = heading.strip().lstrip("#").strip()
+    text = strip_heading_numbering(text)
+    text = re.sub(r"\s+", " ", text)
+    for canonical, aliases in BOARD_MEMO_REQUIRED_SECTION_GROUPS:
+        if canonical.startswith("# "):
+            continue
+        for alias in aliases:
+            if text == alias or alias in text:
+                return canonical
+    return text
+
+
+def board_memo_heading_sequence(board_memo: str) -> list[tuple[int, str, str]]:
+    headings: list[tuple[int, str, str]] = []
+    for line_number, line in enumerate(board_memo.splitlines(), start=1):
+        match = re.match(r"^##\s+(.+?)\s*$", line)
+        if not match:
+            continue
+        raw_heading = match.group(1).strip()
+        headings.append((line_number, raw_heading, normalize_board_memo_heading(raw_heading)))
+    return headings
+
+
+def board_memo_present_sections(board_memo: str) -> set[str]:
+    present = {canonical for _line_number, _raw, canonical in board_memo_heading_sequence(board_memo)}
+    if "# 《董事会建议书》" in board_memo:
+        present.add("# 《董事会建议书》")
+    return present
+
+
 def board_memo_missing_markers(board_memo: str) -> list[str]:
-    return [marker for marker in BOARD_MEMO_REQUIRED_MARKERS if marker not in board_memo]
+    present = board_memo_present_sections(board_memo)
+    return [canonical for canonical in BOARD_MEMO_CANONICAL_SECTIONS if canonical not in present]
+
+
+def board_memo_has_duplicate_restart(board_memo: str) -> bool:
+    seen_terminal = False
+    for _line_number, _raw, canonical in board_memo_heading_sequence(board_memo):
+        if canonical in BOARD_MEMO_TERMINAL_SECTIONS:
+            seen_terminal = True
+            continue
+        if seen_terminal and canonical in BOARD_MEMO_RESTART_SECTIONS:
+            return True
+    return False
 
 
 def board_memo_is_complete(board_memo: str) -> bool:
     if not board_memo.strip():
         return False
-    return not board_memo_missing_markers(board_memo)
+    return not board_memo_missing_markers(board_memo) and not board_memo_has_duplicate_restart(board_memo)
+
+
+def split_markdown_h2_blocks(text: str) -> list[tuple[str | None, str | None, str]]:
+    matches = list(re.finditer(r"^##\s+(.+?)\s*$", text, flags=re.MULTILINE))
+    if not matches:
+        return [(None, None, text.strip())] if text.strip() else []
+    blocks: list[tuple[str | None, str | None, str]] = []
+    intro = text[: matches[0].start()].strip()
+    if intro:
+        blocks.append((None, None, intro))
+    for index, match in enumerate(matches):
+        end = matches[index + 1].start() if index + 1 < len(matches) else len(text)
+        heading = match.group(1).strip()
+        blocks.append((heading, normalize_board_memo_heading(heading), text[match.start() : end].strip()))
+    return blocks
+
+
+def merge_model_parts(parts: list[str]) -> str:
+    merged_blocks: list[str] = []
+    seen_sections: set[str] = set()
+    for part_index, part in enumerate(parts):
+        for _heading, canonical, block in split_markdown_h2_blocks(part):
+            if not block:
+                continue
+            if canonical is None:
+                if part_index == 0:
+                    merged_blocks.append(block)
+                continue
+            if canonical in seen_sections:
+                continue
+            merged_blocks.append(block)
+            seen_sections.add(canonical)
+    return "\n\n".join(merged_blocks).strip()
 
 
 def continuation_prompt(missing_markers: list[str], finish_reason: str) -> str:
@@ -202,8 +292,9 @@ def continuation_prompt(missing_markers: list[str], finish_reason: str) -> str:
     return (
         "上一段《董事会建议书》输出未完整结束。"
         f"finish_reason={finish_reason or 'unknown'}。\n\n"
-        "请从刚才结尾处继续输出 Markdown，不要重复已经输出的完整章节。"
-        "如果必须补齐缺失章节，请按模板标题补齐，并保持中文、证据约束和 Mermaid 代码块格式。\n\n"
+        "只输出缺失章节，不要从头重写报告，不要重复已经存在的章节。"
+        "禁止再次输出“输入类型与审议范围”“一句话结论”“核心判断”等已存在章节，除非它们列在缺失章节中。"
+        "从当前最后一个章节之后继续，保持中文、证据约束和 Mermaid 代码块格式。\n\n"
         f"当前仍缺少的关键章节：\n{missing}"
     )
 
@@ -298,20 +389,21 @@ def call_model(prompt_bundle: str, config: dict[str, object]) -> str:
         if text:
             parts.append(text)
         finish_reasons.append(finish_reason or "")
-        board_memo = "\n\n".join(part.strip() for part in parts if part.strip()).strip()
+        board_memo = merge_model_parts(parts)
         missing_markers = board_memo_missing_markers(board_memo)
 
-        if board_memo and finish_reason != "length" and not missing_markers:
+        if board_memo and finish_reason != "length" and not missing_markers and not board_memo_has_duplicate_restart(board_memo):
             return board_memo
 
         if attempt >= max_continuations:
             if not board_memo:
                 raise RuntimeError("模型响应中没有可用正文。")
             missing_text = "、".join(missing_markers) if missing_markers else "无"
+            duplicate_text = "；检测到报告重复重启" if board_memo_has_duplicate_restart(board_memo) else ""
             raise RuntimeError(
                 "模型输出疑似截断或未按董事会模板补齐，已停止展示半截报告。"
                 f"finish_reason 序列：{', '.join(reason or 'unknown' for reason in finish_reasons)}；"
-                f"缺失章节：{missing_text}；"
+                f"缺失章节：{missing_text}{duplicate_text}；"
                 f"已生成字符数：{len(board_memo)}。"
                 "请提高 SUPER_BOARD_LLM_MAX_TOKENS / continuations，或缩短输入材料后重试。"
             )

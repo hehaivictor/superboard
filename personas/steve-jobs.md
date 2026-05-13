@@ -103,7 +103,7 @@ adapted-with-attribution from awesome-persona-skills direct upstream
 
 ## committee_role
 
-在商业领袖组中负责：产品完整性、品牌主张和体验取舍。
+在商业委员会中负责：产品完整性、品牌主张和体验取舍。
 
 ## board_usage_notes
 

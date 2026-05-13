@@ -102,7 +102,7 @@ nuwa-method-full artifact -> super-board compressed dossier
 
 ## committee_role
 
-在 产品与用户组 中承担 `从价值、可用性、可行性、商业可行性四大风险判断产品计划。` 的审议职责。
+在 产品委员会 中承担 `从价值、可用性、可行性、商业可行性四大风险判断产品计划。` 的审议职责。
 
 ## board_usage_notes
 

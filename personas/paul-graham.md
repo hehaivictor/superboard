@@ -102,7 +102,7 @@ nuwa-method-full artifact -> super-board compressed dossier
 
 ## committee_role
 
-在 创业导师组 中承担 `从少数强痛用户、创始人亲自服务和非规模化起点判断创业质量。` 的审议职责。
+在 创业委员会 中承担 `从少数强痛用户、创始人亲自服务和非规模化起点判断创业质量。` 的审议职责。
 
 ## board_usage_notes
 

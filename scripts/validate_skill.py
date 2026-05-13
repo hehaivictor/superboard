@@ -32,6 +32,9 @@ REQUIRED_FILES = [
     "schemas/review_run.schema.json",
     "schemas/calibration_event.schema.json",
     "schemas/action_item.schema.json",
+    "scripts/validate_skill.py",
+    "scripts/audit_board_memo.py",
+    "tests/test_validate_skill.py",
 ]
 
 REQUIRED_PERSONA_FIELDS = [

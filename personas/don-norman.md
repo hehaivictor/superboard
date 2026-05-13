@@ -102,7 +102,7 @@ nuwa-method-full artifact -> super-board compressed dossier
 
 ## committee_role
 
-在 产品与用户组 中承担 `从人的认知、行为、反馈和错误恢复判断产品是否可用可信。` 的审议职责。
+在 产品委员会 中承担 `从人的认知、行为、反馈和错误恢复判断产品是否可用可信。` 的审议职责。
 
 ## board_usage_notes
 

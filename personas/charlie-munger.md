@@ -100,7 +100,7 @@ adapted-with-attribution from awesome-persona-skills direct upstream
 
 ## committee_role
 
-在投资大师组中负责：误判心理、激励机制、逆向思考和多元模型。
+在投资委员会中负责：误判心理、激励机制、逆向思考和多元模型。
 
 ## board_usage_notes
 

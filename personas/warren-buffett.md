@@ -100,7 +100,7 @@ adapted-with-attribution from awesome-persona-skills direct upstream
 
 ## committee_role
 
-在投资大师组中负责：长期商业质量、现金流、护城河和资本配置。
+在投资委员会中负责：长期商业质量、现金流、护城河和资本配置。
 
 ## board_usage_notes
 

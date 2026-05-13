@@ -102,7 +102,7 @@ nuwa-method-full artifact -> super-board compressed dossier
 
 ## committee_role
 
-在 创业导师组 中承担 `从技术浪潮、市场时机和软件重构行业成本结构判断机会。` 的审议职责。
+在 创业委员会 中承担 `从技术浪潮、市场时机和软件重构行业成本结构判断机会。` 的审议职责。
 
 ## board_usage_notes
 

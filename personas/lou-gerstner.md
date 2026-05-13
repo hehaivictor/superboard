@@ -102,7 +102,7 @@ nuwa-method-full artifact -> super-board compressed dossier
 
 ## committee_role
 
-在 商业领袖组 中承担 `从客户问题、组织责任、执行节奏和文化现实看战略能否落地。` 的审议职责。
+在 商业委员会 中承担 `从客户问题、组织责任、执行节奏和文化现实看战略能否落地。` 的审议职责。
 
 ## board_usage_notes
 

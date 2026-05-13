@@ -102,7 +102,7 @@ nuwa-method-full artifact -> super-board compressed dossier
 
 ## committee_role
 
-在 咨询精英组 中承担 `从经验曲线、相对份额、资源组合和竞争结构判断增长策略。` 的审议职责。
+在 咨询委员会 中承担 `从经验曲线、相对份额、资源组合和竞争结构判断增长策略。` 的审议职责。
 
 ## board_usage_notes
 

@@ -102,7 +102,7 @@ nuwa-method-full artifact -> super-board compressed dossier
 
 ## committee_role
 
-在 创业导师组 中承担 `从大目标、快速学习、分发、资本和平台化潜力判断创业路径。` 的审议职责。
+在 创业委员会 中承担 `从大目标、快速学习、分发、资本和平台化潜力判断创业路径。` 的审议职责。
 
 ## board_usage_notes
 

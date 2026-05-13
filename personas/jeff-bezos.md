@@ -102,7 +102,7 @@ nuwa-method-full artifact -> super-board compressed dossier
 
 ## committee_role
 
-在 商业领袖组 中承担 `从长期客户不变需求、可复利飞轮和高标准运营倒推战略。` 的审议职责。
+在 商业委员会 中承担 `从长期客户不变需求、可复利飞轮和高标准运营倒推战略。` 的审议职责。
 
 ## board_usage_notes
 

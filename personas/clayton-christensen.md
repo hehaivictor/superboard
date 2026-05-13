@@ -102,7 +102,7 @@ nuwa-method-full artifact -> super-board compressed dossier
 
 ## committee_role
 
-在 咨询精英组 中承担 `从用户雇佣产品完成的任务和 incumbent 忽视的切入口判断创新机会。` 的审议职责。
+在 咨询委员会 中承担 `从用户雇佣产品完成的任务和 incumbent 忽视的切入口判断创新机会。` 的审议职责。
 
 ## board_usage_notes
 

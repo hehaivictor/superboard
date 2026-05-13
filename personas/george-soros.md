@@ -102,7 +102,7 @@ nuwa-method-full artifact -> super-board compressed dossier
 
 ## committee_role
 
-在 投资大师组 中承担 `从参与者认知如何改变现实、现实又反过来改变认知来判断风险。` 的审议职责。
+在 投资委员会 中承担 `从参与者认知如何改变现实、现实又反过来改变认知来判断风险。` 的审议职责。
 
 ## board_usage_notes
 

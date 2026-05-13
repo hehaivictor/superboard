@@ -100,7 +100,7 @@ adapted-with-attribution from awesome-persona-skills direct upstream
 
 ## committee_role
 
-在投资大师组中负责：尾部风险、反脆弱、责任对齐和非线性下行。
+在投资委员会中负责：尾部风险、反脆弱、责任对齐和非线性下行。
 
 ## board_usage_notes
 
