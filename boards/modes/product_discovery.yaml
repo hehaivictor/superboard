@@ -13,8 +13,8 @@ enabled_committees:
 required_sections:
   - 输入材料结构化拆解
   - 价值链 / 工作流图
-  - Evidence Packet
-  - Assumption Ledger
+  - 证据包
+  - 假设账本
   - 最大机会
   - 需要补充验证的问题
   - 建议行动清单

@@ -26,6 +26,28 @@ PORT = 8766
 MODEL_CONFIG_PATH = ROOT / ".super-board-model.json"
 GENERATION_JOBS: dict[str, dict[str, object]] = {}
 GENERATION_JOBS_LOCK = threading.Lock()
+DEFAULT_MODEL_TIMEOUT = 240
+DEFAULT_MODEL_MAX_TOKENS = 16000
+DEFAULT_MODEL_CONTINUATIONS = 3
+
+BOARD_MEMO_REQUIRED_MARKERS = [
+    "# 《董事会建议书》",
+    "## 输入类型与审议范围",
+    "## 一句话结论",
+    "## Go / No-Go / Pivot 建议",
+    "## 核心判断",
+    "## 证据包",
+    "## 假设账本",
+    "## 各委员会结论",
+    "## 跨委员会共识",
+    "## 关键分歧",
+    "## 最大机会",
+    "## 最大风险",
+    "## 建议行动清单",
+    "## 需要补充验证的问题",
+    "## 附录：各 Persona 关键意见摘要",
+    "## 决策记录条目",
+]
 
 MODE_LABELS = {
     "quick_triage": "快速审议",
@@ -99,8 +121,13 @@ def model_config() -> dict[str, object]:
         or "gpt-4.1"
     )
     api_key = str(os.environ.get("SUPER_BOARD_LLM_API_KEY") or local.get("api_key") or os.environ.get("OPENAI_API_KEY") or "")
-    timeout = int(os.environ.get("SUPER_BOARD_LLM_TIMEOUT") or local.get("timeout") or 120)
-    max_tokens = int(os.environ.get("SUPER_BOARD_LLM_MAX_TOKENS") or local.get("max_tokens") or 6000)
+    timeout = int(os.environ.get("SUPER_BOARD_LLM_TIMEOUT") or local.get("timeout") or DEFAULT_MODEL_TIMEOUT)
+    max_tokens = int(os.environ.get("SUPER_BOARD_LLM_MAX_TOKENS") or local.get("max_tokens") or DEFAULT_MODEL_MAX_TOKENS)
+    continuations = int(
+        os.environ.get("SUPER_BOARD_LLM_CONTINUATIONS")
+        or local.get("continuations")
+        or DEFAULT_MODEL_CONTINUATIONS
+    )
     temperature = float(os.environ.get("SUPER_BOARD_LLM_TEMPERATURE") or local.get("temperature") or 0.2)
     missing = []
     if not api_key:
@@ -114,6 +141,7 @@ def model_config() -> dict[str, object]:
         "api_key": api_key,
         "timeout": timeout,
         "max_tokens": max_tokens,
+        "continuations": continuations,
         "temperature": temperature,
         "missing": missing,
         "config_file": str(MODEL_CONFIG_PATH.relative_to(ROOT)),
@@ -128,6 +156,9 @@ def public_model_config() -> dict[str, object]:
         "model": config["model"],
         "missing": config["missing"],
         "config_file": config["config_file"],
+        "timeout": config["timeout"],
+        "max_tokens": config["max_tokens"],
+        "continuations": config["continuations"],
     }
 
 
@@ -135,7 +166,164 @@ def chat_completions_url(base_url: str) -> str:
     return base_url if base_url.endswith("/chat/completions") else f"{base_url}/chat/completions"
 
 
+def normalize_model_error(status_code: int, detail: str) -> str:
+    request_id = ""
+    if status_code == 504 or "Gateway Time-out" in detail or "Gateway Timeout" in detail:
+        return "模型网关生成超时。已连接到模型服务，但上游网关在建议书生成完成前断开，请稍后重试或减少材料长度。"
+    try:
+        payload = json.loads(detail)
+        error = payload.get("error")
+        if isinstance(error, dict):
+            message = str(error.get("message") or "")
+            request_id = str(error.get("request_id") or "")
+        else:
+            message = str(payload.get("message") or "")
+    except json.JSONDecodeError:
+        message = detail
+
+    if "额度不足" in message or "余额" in message or "insufficient" in message.lower() or "quota" in message.lower():
+        suffix = f" request_id: {request_id}" if request_id else ""
+        return f"模型账户额度不足，请充值或更换可用 API Key 后重试。{suffix}"
+    return f"模型接口返回 {status_code}：{message or detail}"
+
+
+def board_memo_missing_markers(board_memo: str) -> list[str]:
+    return [marker for marker in BOARD_MEMO_REQUIRED_MARKERS if marker not in board_memo]
+
+
+def board_memo_is_complete(board_memo: str) -> bool:
+    if not board_memo.strip():
+        return False
+    return not board_memo_missing_markers(board_memo)
+
+
+def continuation_prompt(missing_markers: list[str], finish_reason: str) -> str:
+    missing = "\n".join(f"- {marker}" for marker in missing_markers) or "- 未检测到缺失章节，但上一段达到长度上限。"
+    return (
+        "上一段《董事会建议书》输出未完整结束。"
+        f"finish_reason={finish_reason or 'unknown'}。\n\n"
+        "请从刚才结尾处继续输出 Markdown，不要重复已经输出的完整章节。"
+        "如果必须补齐缺失章节，请按模板标题补齐，并保持中文、证据约束和 Mermaid 代码块格式。\n\n"
+        f"当前仍缺少的关键章节：\n{missing}"
+    )
+
+
+def read_streaming_chat_completion(response: object) -> tuple[str, str]:
+    chunks: list[str] = []
+    finish_reason = ""
+    while True:
+        raw_line = response.readline()
+        if not raw_line:
+            break
+        line = raw_line.decode("utf-8", errors="replace").strip()
+        if not line or line.startswith(":"):
+            continue
+        if not line.startswith("data:"):
+            continue
+        data = line[5:].strip()
+        if data == "[DONE]":
+            break
+        try:
+            payload = json.loads(data)
+        except json.JSONDecodeError:
+            continue
+        choices = payload.get("choices", [])
+        if not choices or not isinstance(choices[0], dict):
+            continue
+        choice = choices[0]
+        if choice.get("finish_reason"):
+            finish_reason = str(choice["finish_reason"])
+        delta = choice.get("delta", {})
+        if isinstance(delta, dict) and delta.get("content"):
+            chunks.append(str(delta["content"]))
+            continue
+        message = choice.get("message", {})
+        if isinstance(message, dict) and message.get("content"):
+            chunks.append(str(message["content"]))
+    return "".join(chunks).strip(), finish_reason
+
+
+def call_streaming_chat_completion(messages: list[dict[str, str]], config: dict[str, object]) -> tuple[str, str]:
+    body = json.dumps(
+        {
+            "model": config["model"],
+            "messages": messages,
+            "temperature": config["temperature"],
+            "max_tokens": config["max_tokens"],
+            "stream": True,
+        },
+        ensure_ascii=False,
+    ).encode("utf-8")
+    request = urllib.request.Request(
+        chat_completions_url(str(config["base_url"])),
+        data=body,
+        headers={
+            "Authorization": f"Bearer {config['api_key']}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=int(config["timeout"])) as response:
+            return read_streaming_chat_completion(response)
+    except urllib.error.HTTPError as exc:
+        detail = exc.read().decode("utf-8", errors="replace")[:1000]
+        api_key = str(config.get("api_key", ""))
+        if api_key:
+            detail = detail.replace(api_key, "[redacted]")
+        raise RuntimeError(normalize_model_error(exc.code, detail)) from exc
+    except urllib.error.URLError as exc:
+        raise RuntimeError(f"模型接口不可达：{exc.reason}") from exc
+
+
 def call_model(prompt_bundle: str, config: dict[str, object]) -> str:
+    messages = [
+        {
+            "role": "system",
+            "content": (
+                "你是 Super Board 的董事会审议生成器。"
+                "必须根据用户提供的提示包输出中文《董事会建议书》。"
+                "不得编造外部事实；无法由来源块支持的内容必须标注为推断或假设。"
+                "必须包含证据包、假设账本、反证实验、推进/调整/不推进条件和决策记录条目。"
+            ),
+        },
+        {"role": "user", "content": prompt_bundle},
+    ]
+    parts: list[str] = []
+    finish_reasons: list[str] = []
+    max_continuations = max(0, int(config.get("continuations", DEFAULT_MODEL_CONTINUATIONS)))
+
+    for attempt in range(max_continuations + 1):
+        text, finish_reason = call_streaming_chat_completion(messages, config)
+        if text:
+            parts.append(text)
+        finish_reasons.append(finish_reason or "")
+        board_memo = "\n\n".join(part.strip() for part in parts if part.strip()).strip()
+        missing_markers = board_memo_missing_markers(board_memo)
+
+        if board_memo and finish_reason != "length" and not missing_markers:
+            return board_memo
+
+        if attempt >= max_continuations:
+            if not board_memo:
+                raise RuntimeError("模型响应中没有可用正文。")
+            missing_text = "、".join(missing_markers) if missing_markers else "无"
+            raise RuntimeError(
+                "模型输出疑似截断或未按董事会模板补齐，已停止展示半截报告。"
+                f"finish_reason 序列：{', '.join(reason or 'unknown' for reason in finish_reasons)}；"
+                f"缺失章节：{missing_text}；"
+                f"已生成字符数：{len(board_memo)}。"
+                "请提高 SUPER_BOARD_LLM_MAX_TOKENS / continuations，或缩短输入材料后重试。"
+            )
+
+        context_tail = text or board_memo[-12000:]
+        messages.append({"role": "assistant", "content": context_tail[-12000:]})
+        messages.append({"role": "user", "content": continuation_prompt(missing_markers, finish_reason)})
+
+    raise RuntimeError("模型生成未能完成。")
+
+
+def call_model_non_streaming(prompt_bundle: str, config: dict[str, object]) -> str:
     body = json.dumps(
         {
             "model": config["model"],
@@ -169,11 +357,11 @@ def call_model(prompt_bundle: str, config: dict[str, object]) -> str:
         with urllib.request.urlopen(request, timeout=int(config["timeout"])) as response:
             payload = json.loads(response.read().decode("utf-8"))
     except urllib.error.HTTPError as exc:
-        detail = exc.read().decode("utf-8", errors="replace")[:500]
+        detail = exc.read().decode("utf-8", errors="replace")[:1000]
         api_key = str(config.get("api_key", ""))
         if api_key:
             detail = detail.replace(api_key, "[redacted]")
-        raise RuntimeError(f"模型接口返回 {exc.code}：{detail}") from exc
+        raise RuntimeError(normalize_model_error(exc.code, detail)) from exc
     except urllib.error.URLError as exc:
         raise RuntimeError(f"模型接口不可达：{exc.reason}") from exc
 
@@ -227,6 +415,10 @@ def attach_model_memo(payload: dict[str, object], board_memo: str, config: dict[
         "base_url": config["base_url"],
         "generated_at": generated_at,
         "prompt_hash": hashlib.sha256(prompt_bundle.encode("utf-8")).hexdigest()[:16],
+        "output_chars": len(board_memo),
+        "missing_required_sections": board_memo_missing_markers(board_memo),
+        "max_tokens": config.get("max_tokens"),
+        "continuations": config.get("continuations"),
     }
     payload["board_memo"] = board_memo
     payload["generated_by"] = "model"

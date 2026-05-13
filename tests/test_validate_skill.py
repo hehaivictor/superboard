@@ -44,6 +44,19 @@ def minimal_persona(name: str = "Example") -> str:
     return "\n\n".join(sections) + "\n"
 
 
+class FakeStreamingResponse:
+    def __init__(self, lines: list[str]) -> None:
+        self._lines = [line.encode("utf-8") for line in lines]
+        self._index = 0
+
+    def readline(self) -> bytes:
+        if self._index >= len(self._lines):
+            return b""
+        line = self._lines[self._index]
+        self._index += 1
+        return line
+
+
 class ValidateSkillTests(unittest.TestCase):
     def test_default_skill_passes(self) -> None:
         issues = validate_skill.validate(ROOT)
@@ -109,7 +122,7 @@ class ValidateSkillTests(unittest.TestCase):
     def test_board_template_contains_required_mermaid_blocks(self) -> None:
         text = (ROOT / "templates/board-memo.md").read_text(encoding="utf-8")
         self.assertGreaterEqual(text.count("```mermaid"), validate_skill.REQUIRED_MERMAID_BLOCKS)
-        for section in ["Evidence Packet", "Assumption Ledger", "Decision Log Entry"]:
+        for section in ["证据包", "假设账本", "决策记录条目"]:
             self.assertIn(f"## {section}", text)
 
     def test_required_modes_exist_and_have_unique_ids(self) -> None:
@@ -309,6 +322,89 @@ class ValidateSkillTests(unittest.TestCase):
         self.assertEqual("# 《董事会建议书》：模型生成测试\n\n模型正文", attached["board_memo"])
         self.assertEqual("test-model", attached["generation"]["model"])
         self.assertEqual(attached["board_memo"], attached["record"]["board_memo"])
+
+    def test_streaming_completion_reports_length_finish_reason(self) -> None:
+        response = FakeStreamingResponse(
+            [
+                'data: {"choices":[{"delta":{"content":"# 《董事会建议书》"},"finish_reason":null}]}\n',
+                'data: {"choices":[{"delta":{"content":"\\n\\n## 输入类型与审议范围"},"finish_reason":null}]}\n',
+                'data: {"choices":[{"delta":{},"finish_reason":"length"}]}\n',
+                "data: [DONE]\n",
+            ]
+        )
+
+        text, finish_reason = super_board_server.read_streaming_chat_completion(response)
+
+        self.assertIn("输入类型与审议范围", text)
+        self.assertEqual("length", finish_reason)
+
+    def test_model_generation_rejects_incomplete_board_memo(self) -> None:
+        incomplete = "# 《董事会建议书》\n\n## 输入类型与审议范围\n\n只有报告开头。"
+        complete = "\n\n".join(
+            [
+                "# 《董事会建议书》",
+                "## 输入类型与审议范围",
+                "## 一句话结论",
+                "## Go / No-Go / Pivot 建议",
+                "## 核心判断",
+                "## 证据包",
+                "## 假设账本",
+                "## 各委员会结论",
+                "## 跨委员会共识",
+                "## 关键分歧",
+                "## 最大机会",
+                "## 最大风险",
+                "## 建议行动清单",
+                "## 需要补充验证的问题",
+                "## 决策记录条目",
+                "## 附录：各 Persona 关键意见摘要",
+            ]
+        )
+
+        self.assertFalse(super_board_server.board_memo_is_complete(incomplete))
+        self.assertTrue(super_board_server.board_memo_is_complete(complete))
+
+    def test_call_model_continues_when_stream_finishes_by_length(self) -> None:
+        first_part = "# 《董事会建议书》\n\n## 输入类型与审议范围\n\n开头内容。"
+        second_part = "\n\n".join(
+            [
+                "## 一句话结论",
+                "## Go / No-Go / Pivot 建议",
+                "## 核心判断",
+                "## 证据包",
+                "## 假设账本",
+                "## 各委员会结论",
+                "## 跨委员会共识",
+                "## 关键分歧",
+                "## 最大机会",
+                "## 最大风险",
+                "## 建议行动清单",
+                "## 需要补充验证的问题",
+                "## 附录：各 Persona 关键意见摘要",
+                "## 决策记录条目",
+            ]
+        )
+
+        with patch.object(
+            super_board_server,
+            "call_streaming_chat_completion",
+            side_effect=[(first_part, "length"), (second_part, "stop")],
+        ) as fake_call:
+            memo = super_board_server.call_model(
+                "prompt",
+                {
+                    "model": "test-model",
+                    "base_url": "http://127.0.0.1:9999/v1",
+                    "api_key": "test-key",
+                    "temperature": 0.2,
+                    "max_tokens": 6000,
+                    "timeout": 1,
+                    "continuations": 1,
+                },
+            )
+
+        self.assertIn("## 决策记录条目", memo)
+        self.assertEqual(2, fake_call.call_count)
 
     def test_custom_personas_have_full_nuwa_artifacts(self) -> None:
         custom_personas = validate_skill.parse_custom_personas(ROOT / "sources/awesome-persona-skills.yaml")

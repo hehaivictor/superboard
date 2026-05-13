@@ -13,8 +13,8 @@ enabled_committees:
 required_sections:
   - 输入材料结构化拆解
   - 核心假设表
-  - Evidence Packet
-  - Assumption Ledger
+  - 证据包
+  - 假设账本
   - 最大机会
   - 最大风险
   - 决策条件

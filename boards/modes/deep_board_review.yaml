@@ -15,11 +15,11 @@ enabled_committees:
 required_sections:
   - 输入材料结构化拆解
   - 核心假设表
-  - Evidence Packet
-  - Assumption Ledger
+  - 证据包
+  - 假设账本
   - 各委员会结论
   - 董事会审议信号图
   - 反证与失败路径
-  - Decision Log Entry
+  - 决策记录条目
 depth: deep
 include_persona_appendix: true

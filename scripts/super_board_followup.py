@@ -36,7 +36,7 @@ def render_followup(record: dict[str, object], checkpoint: int) -> str:
 
 {assumption_lines or "- 未记录"}
 
-## Evidence Packets
+## 证据包
 
 {evidence_lines or "- 未记录"}
 

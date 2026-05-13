@@ -1,4 +1,4 @@
-# Decision Log Entry：{{decision_id}}
+# 决策记录条目：{{decision_id}}
 
 - 决策编号：{{decision_id}}
 - 创建时间：{{created_at}}

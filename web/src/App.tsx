@@ -25,6 +25,9 @@ type LlmConfig = {
   model: string;
   missing: string[];
   config_file: string;
+  timeout?: number;
+  max_tokens?: number;
+  continuations?: number;
 };
 
 type Preview = {
@@ -91,7 +94,7 @@ const fallbackConfig: Config = {
       description: "完整五委员会审议，适合可转发建议书。",
       recommended_for: ["产品需求", "项目计划", "商业计划"],
       enabled_committees: ["business-leaders", "startup-mentors", "investment-masters", "consulting-elite", "product-users"],
-      required_sections: ["Evidence Packet", "Assumption Ledger", "Decision Log Entry"],
+      required_sections: ["证据包", "假设账本", "决策记录条目"],
       depth: "deep",
       include_persona_appendix: true
     }
@@ -364,7 +367,7 @@ export function App() {
         return;
       }
       if (payload.job_id) {
-        await pollGenerationJob(String(payload.job_id), llm.model);
+        await pollGenerationJob(String(payload.job_id), llm);
         return;
       }
       setPreview(payload);
@@ -379,11 +382,21 @@ export function App() {
     }
   }
 
-  async function pollGenerationJob(jobId: string, model: string) {
-    for (let attempt = 0; attempt < 180; attempt += 1) {
-      await sleep(attempt === 0 ? 800 : 2000);
+  async function pollGenerationJob(jobId: string, llm: LlmConfig) {
+    const pollIntervalMs = 2000;
+    const firstPollDelayMs = 800;
+    const timeoutSeconds = Number(llm.timeout ?? 360);
+    const continuations = Number(llm.continuations ?? 0);
+    const maxWaitSeconds = Math.max(900, timeoutSeconds * (continuations + 1) + 120);
+    const maxAttempts = Math.ceil((maxWaitSeconds * 1000) / pollIntervalMs);
+    const startedAt = Date.now();
+
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+      await sleep(attempt === 0 ? firstPollDelayMs : pollIntervalMs);
       const response = await fetch(`/api/jobs/${jobId}`);
       const payload = await response.json().catch(() => ({}));
+      const elapsedSeconds = Math.round((Date.now() - startedAt) / 1000);
+      const elapsedLabel = elapsedSeconds < 60 ? `${elapsedSeconds} 秒` : `${Math.floor(elapsedSeconds / 60)} 分 ${elapsedSeconds % 60} 秒`;
       if (!response.ok) {
         const message = String(payload.error ?? "生成任务读取失败");
         setStatus(message);
@@ -391,11 +404,11 @@ export function App() {
         return;
       }
       if (payload.status === "running") {
-        setStatus(`生成任务已创建，等待调用 ${model}`);
+        setStatus(`生成任务已创建，等待调用 ${llm.model}（已等待 ${elapsedLabel}）`);
         continue;
       }
       if (payload.status === "calling_model") {
-        setStatus(`正在调用 ${model} 生成董事会建议书`);
+        setStatus(`正在调用 ${llm.model} 生成董事会建议书（已等待 ${elapsedLabel}）`);
         continue;
       }
       if (payload.status === "failed") {
@@ -406,12 +419,12 @@ export function App() {
       }
       if (payload.status === "succeeded" && payload.result) {
         setPreview(payload.result as Preview);
-        setStatus(`模型建议书已生成：${model}`);
+        setStatus(`模型建议书已生成：${llm.model}`);
         setGenerationError(null);
         return;
       }
     }
-    const message = "模型生成超时，请稍后重试。";
+    const message = `前端等待已超过 ${Math.round(maxWaitSeconds / 60)} 分钟，但后端任务尚未返回最终状态。请刷新记录或稍后重试。`;
     setStatus(message);
     setGenerationError(message);
   }
@@ -619,7 +632,7 @@ export function App() {
             <div className="h-[690px] overflow-auto p-4 text-sm leading-6">
               <div className="rounded-md border border-red-200 bg-red-50 p-4 text-red-800">
                 <div className="font-medium">生成失败</div>
-                <div className="mt-1 whitespace-pre-wrap">{generationError}</div>
+                <div className="mt-1 whitespace-pre-wrap break-words">{generationError}</div>
               </div>
             </div>
           ) : (

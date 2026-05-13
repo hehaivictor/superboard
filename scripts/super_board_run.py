@@ -25,9 +25,9 @@ COMMITTEE_LABELS = {
 }
 
 SECTION_LABELS = {
-    "Evidence Packet": "证据包",
-    "Assumption Ledger": "假设账本",
-    "Decision Log Entry": "决策记录条目",
+    "证据包": "证据包",
+    "假设账本": "假设账本",
+    "决策记录条目": "决策记录条目",
 }
 
 DEPTH_LABELS = {

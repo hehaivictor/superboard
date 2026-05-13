@@ -61,7 +61,7 @@
 - 每条判断包含证据来源、置信度、反向证据和反证实验。
 - 低置信假设不能写成事实。
 
-检查结论：`templates/board-memo.md`、深度输出样例和 validator 已要求 `Evidence Packet` 与 `Assumption Ledger`。
+检查结论：`templates/board-memo.md`、深度输出样例和 validator 已要求 `证据包` 与 `假设账本`。
 
 ## 决策记录样例
 

@@ -13,8 +13,8 @@ required_sections:
   - 输入材料结构化拆解
   - 一句话结论
   - Go / No-Go / Pivot 建议
-  - Evidence Packet
-  - Assumption Ledger
+  - 证据包
+  - 假设账本
   - 建议行动清单
 depth: quick
 include_persona_appendix: false

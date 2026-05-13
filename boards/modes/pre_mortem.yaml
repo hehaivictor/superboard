@@ -11,8 +11,8 @@ enabled_committees:
   - consulting-elite
 required_sections:
   - 输入材料结构化拆解
-  - Evidence Packet
-  - Assumption Ledger
+  - 证据包
+  - 假设账本
   - 反证与失败路径
   - 决策条件
   - 30 / 60 / 90 天行动方案

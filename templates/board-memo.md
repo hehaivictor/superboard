@@ -55,7 +55,7 @@ flowchart LR
 - 中置信：{{medium_confidence_evidence}}
 - 低置信 / 待验证：{{low_confidence_evidence}}
 
-## Evidence Packet
+## 证据包
 
 | 判断 | 类型 | 证据来源 | 置信度 | 反向证据 | 反证实验 |
 |---|---|---|---|---|---|
@@ -63,7 +63,7 @@ flowchart LR
 | {{claim_2}} | {{claim_2_type}} | {{claim_2_source}} | {{claim_2_confidence}} | {{claim_2_counterevidence}} | {{claim_2_disproof_test}} |
 | {{claim_3}} | {{claim_3_type}} | {{claim_3_source}} | {{claim_3_confidence}} | {{claim_3_counterevidence}} | {{claim_3_disproof_test}} |
 
-## Assumption Ledger
+## 假设账本
 
 | 假设 | 类型 | 当前证据 | 30 天检查 | 60 天检查 | 90 天检查 |
 |---|---|---|---|---|---|
@@ -191,7 +191,7 @@ flowchart LR
 
 {{persona_appendix}}
 
-## Decision Log Entry
+## 决策记录条目
 
 - 决策编号：{{decision_id}}
 - 创建时间：{{created_at}}
