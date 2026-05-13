@@ -36,10 +36,50 @@ type Preview = {
   prompt_bundle: string;
   evidence_packets: Array<Record<string, string>>;
   assumptions: Array<Record<string, unknown>>;
+  ontology_trace?: OntologyTraceHit[];
+  ontology_rule_hits?: OntologyRuleHit[];
+  committee_rule_matrix?: CommitteeRuleMatrix[];
   material_pack?: MaterialPack;
   review_run?: ReviewRun;
   action_items?: Array<Record<string, unknown>>;
   calibration_events?: Array<Record<string, unknown>>;
+};
+
+type OntologyTraceHit = {
+  persona_id: string;
+  persona_name?: string;
+  committee: string;
+  ontology_level?: string;
+  source_quality?: string;
+  rule_id: string;
+  rule_description?: string;
+  triggered_by: string[];
+  supporting_evidence?: string[];
+  positive_signals?: string[];
+  red_flags?: string[];
+  missing_evidence?: string[];
+  counter_test?: string;
+  confidence_boundary?: string[];
+};
+
+type OntologyRuleHit = {
+  persona_id: string;
+  persona_name?: string;
+  committee: string;
+  rule_id: string;
+  triggered_by: string[];
+  missing_evidence?: string[];
+  counter_test?: string;
+  confidence_boundary?: string[];
+};
+
+type CommitteeRuleMatrix = {
+  committee: string;
+  rule_hits: Array<{
+    persona_id: string;
+    rule_id: string;
+    triggered_by: string[];
+  }>;
 };
 
 type MaterialFile = {
@@ -148,6 +188,24 @@ const fieldLabels: Record<string, string> = {
   action_items: "行动项",
   review_run: "审议流程",
   calibration_events: "校准事件",
+  ontology_trace: "本体触发明细",
+  ontology_rule_hits: "本体规则命中",
+  committee_rule_matrix: "委员会规则链",
+  triggered_specialists: "按需触发专家",
+  persona_id: "本体人物",
+  persona_name: "人物名称",
+  committee: "委员会",
+  ontology_level: "本体层级",
+  source_quality: "来源质量",
+  rule_id: "规则编号",
+  rule_description: "规则说明",
+  triggered_by: "触发词",
+  supporting_evidence: "支持证据",
+  positive_signals: "正向信号",
+  red_flags: "风险信号",
+  missing_evidence: "证据缺口",
+  counter_test: "反证实验",
+  confidence_boundary: "置信边界",
   pack_id: "材料包编号",
   files: "文件",
   warnings: "提示",
@@ -203,11 +261,15 @@ const valueLabels: Record<string, string> = {
 const supportedUploadTypes = ".md,.markdown,.txt,.json,.csv,.yaml,.yml";
 const detailTabs = [
   ["materials", "材料摘要"],
+  ["ontology", "本体触发"],
+  ["rules", "规则链"],
   ["evidence", "依据"],
   ["assumptions", "待验证假设"],
   ["flow", "生成过程"],
   ["record", "归档记录"]
 ] as const;
+
+type DetailTab = typeof detailTabs[number][0];
 
 function formatFileSize(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;
@@ -311,6 +373,16 @@ function renderRecordMarkdown(record: Record<string, unknown>) {
     formatJson(record.assumptions ?? []),
     "```",
     "",
+    "## 本体规则命中",
+    "```json",
+    formatJson(record.ontology_rule_hits ?? []),
+    "```",
+    "",
+    "## 委员会规则链",
+    "```json",
+    formatJson(record.committee_rule_matrix ?? []),
+    "```",
+    "",
     "## 行动项",
     "```json",
     formatJson(record.action_items ?? []),
@@ -335,6 +407,14 @@ function assumptionRows(preview: Preview | null) {
   return preview?.assumptions ?? [];
 }
 
+function ontologyRows(preview: Preview | null) {
+  return preview?.ontology_rule_hits ?? [];
+}
+
+function committeeRuleRows(preview: Preview | null) {
+  return preview?.committee_rule_matrix ?? [];
+}
+
 function sleep(ms: number) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
@@ -344,7 +424,7 @@ export function App() {
   const [modeId, setModeId] = useState("deep_board_review");
   const [material, setMaterial] = useState("");
   const [preview, setPreview] = useState<Preview | null>(null);
-  const [activeTab, setActiveTab] = useState<"materials" | "evidence" | "assumptions" | "flow" | "record">("materials");
+  const [activeTab, setActiveTab] = useState<DetailTab>("materials");
   const [status, setStatus] = useState("本地工作台就绪");
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
@@ -746,6 +826,9 @@ export function App() {
                   <div className="mt-1 text-xs text-slate-500">
                     {(preview?.material_pack?.files ?? materialPack?.files ?? []).length} 个材料文件 · {(preview?.material_pack?.source_blocks ?? materialPack?.source_blocks ?? []).length} 个可引用来源块
                   </div>
+                  <div className="mt-1 text-xs text-slate-500">
+                    本体命中：{ontologyRows(preview).length} 条规则
+                  </div>
                 </div>
                 <button
                   type="button"
@@ -784,6 +867,47 @@ export function App() {
                       <div className="text-xs text-slate-500">
                         可引用来源块：{(preview?.material_pack?.source_blocks ?? materialPack?.source_blocks ?? []).length} 个，同一文件可拆分为多个来源块
                       </div>
+                    </div>
+                  )}
+                  {activeTab === "ontology" && (
+                    <div className="space-y-3">
+                      {ontologyRows(preview).length === 0 && <div className="text-slate-500">暂无本体规则命中</div>}
+                      {ontologyRows(preview).map((row, index) => (
+                        <div key={`${row.persona_id}-${row.rule_id}-${index}`} className="rounded-md border border-slate-200 p-3">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-medium">{row.persona_name ?? row.persona_id}</span>
+                            <Badge>{displayCommittee(row.committee)}</Badge>
+                          </div>
+                          <div className="mt-2 text-xs text-slate-500">{row.rule_id}</div>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {row.triggered_by.map((trigger) => <Badge key={trigger}>{trigger}</Badge>)}
+                          </div>
+                          <div className="mt-3 text-xs text-slate-600">
+                            证据缺口：{(row.missing_evidence ?? []).join("、") || "未记录"}
+                          </div>
+                          <div className="mt-1 text-xs text-slate-600">
+                            反证实验：{row.counter_test || "未记录"}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {activeTab === "rules" && (
+                    <div className="space-y-3">
+                      {committeeRuleRows(preview).length === 0 && <div className="text-slate-500">暂无委员会规则链</div>}
+                      {committeeRuleRows(preview).map((group) => (
+                        <div key={group.committee} className="rounded-md border border-slate-200 p-3">
+                          <div className="font-medium">{displayCommittee(group.committee)}</div>
+                          <div className="mt-3 space-y-2">
+                            {group.rule_hits.map((hit, index) => (
+                              <div key={`${hit.persona_id}-${hit.rule_id}-${index}`} className="rounded-md bg-slate-50 p-2 text-xs">
+                                <div className="font-medium text-slate-800">{hit.persona_id} / {hit.rule_id}</div>
+                                <div className="mt-1 text-slate-500">触发词：{hit.triggered_by.join("、") || "未记录"}</div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   )}
                   {activeTab === "evidence" && (

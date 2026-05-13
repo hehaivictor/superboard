@@ -1,0 +1,10 @@
+{
+  "committee_id": "consulting-elite",
+  "name": "consulting-elite",
+  "core_personas": [
+    "michael-porter",
+    "richard-rumelt",
+    "roger-martin"
+  ],
+  "review_focus": "ontology-backed board review"
+}

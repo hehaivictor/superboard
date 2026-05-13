@@ -8,6 +8,7 @@
 - 不自动改变最终建议权重；第一版只展示校准信号。
 - 不声称统计显著，不把少量样本包装成预测能力。
 - 不记录敏感原文，只记录脱敏后的判断类型、假设命中情况和复盘结论。
+- 以规则级校准为主：记录 `persona_id + rule_id` 在某类问题上是否反复有效，不评价人物“对错”。
 
 ## 建议字段
 
@@ -15,9 +16,12 @@
 - `input_type`：产品需求、项目计划或商业计划。
 - `mode_id`：使用的审议模式。
 - `committee_id`：委员会 ID。
+- `persona_id`：本体人物 ID。
+- `rule_id`：触发的本体规则。
 - `judgment_type`：机会、风险、反证、执行建议。
 - `outcome_status`：hit、miss、partial、unknown。
 - `evidence_note`：复盘依据的简短说明。
+- `counter_test_result`：当时反证实验是否真的执行，以及结果如何。
 - `updated_at`：复盘更新时间。
 
 ## 使用边界

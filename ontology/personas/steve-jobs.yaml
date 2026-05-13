@@ -1,0 +1,197 @@
+{
+  "persona_id": "steve-jobs",
+  "name": "Steve Jobs",
+  "committee": "product-users",
+  "ontology_level": "core",
+  "source_quality": "high",
+  "version": 1,
+  "concepts": [
+    "focus",
+    "whole_widget",
+    "experience",
+    "product_story",
+    "taste"
+  ],
+  "decision_rules": [
+    {
+      "rule_id": "jobs_focus_saying_no",
+      "description": "是否通过拒绝聚焦主张",
+      "triggers": [
+        "聚焦",
+        "删除",
+        "功能",
+        "主张",
+        "体验"
+      ],
+      "positive_signals": [
+        "核心动作清楚",
+        "删除非核心"
+      ],
+      "red_flags": [
+        "功能堆叠"
+      ],
+      "evidence_required": [
+        "功能取舍表",
+        "首屏任务"
+      ],
+      "counter_tests": [
+        "若不能删除 30% 非核心功能，则主张不清"
+      ],
+      "confidence_boundary": [
+        "不用于任性删需求"
+      ]
+    },
+    {
+      "rule_id": "jobs_whole_widget_experience",
+      "description": "端到端体验是否完整",
+      "triggers": [
+        "端到端",
+        "体验",
+        "交付",
+        "渠道",
+        "集成"
+      ],
+      "positive_signals": [
+        "关键体验不被割裂",
+        "交付闭环"
+      ],
+      "red_flags": [
+        "部门边界破坏体验"
+      ],
+      "evidence_required": [
+        "体验地图",
+        "交付 owner"
+      ],
+      "counter_tests": [
+        "若任一关键环节无人负责，则不发布"
+      ],
+      "confidence_boundary": [
+        "适用于用户体验系统"
+      ]
+    },
+    {
+      "rule_id": "jobs_demo_path",
+      "description": "是否有可被记住的演示路径",
+      "triggers": [
+        "演示",
+        "发布",
+        "故事",
+        "demo",
+        "第一分钟"
+      ],
+      "positive_signals": [
+        "三分钟讲清价值",
+        "第一分钟建立信任"
+      ],
+      "red_flags": [
+        "需要长篇解释"
+      ],
+      "evidence_required": [
+        "演示脚本",
+        "用户理解测试"
+      ],
+      "counter_tests": [
+        "若用户看完 demo 不知道用途，则重写"
+      ],
+      "confidence_boundary": [
+        "不替代深度文档"
+      ]
+    },
+    {
+      "rule_id": "jobs_technology_liberal_arts",
+      "description": "技术是否被翻译成人能感知的价值",
+      "triggers": [
+        "技术",
+        "价值",
+        "用户",
+        "设计",
+        "情感"
+      ],
+      "positive_signals": [
+        "复杂技术变成简单体验",
+        "用户感知强"
+      ],
+      "red_flags": [
+        "炫技但无感知价值"
+      ],
+      "evidence_required": [
+        "用户语言",
+        "场景故事"
+      ],
+      "counter_tests": [
+        "若用户只记住技术名词，则表达失败"
+      ],
+      "confidence_boundary": [
+        "不否认底层技术价值"
+      ]
+    },
+    {
+      "rule_id": "jobs_brand_promise_consistency",
+      "description": "品牌承诺和实际体验是否一致",
+      "triggers": [
+        "品牌",
+        "承诺",
+        "信任",
+        "一致",
+        "质量"
+      ],
+      "positive_signals": [
+        "体验兑现承诺",
+        "细节一致"
+      ],
+      "red_flags": [
+        "营销承诺超过产品"
+      ],
+      "evidence_required": [
+        "品牌文案",
+        "体验证据"
+      ],
+      "counter_tests": [
+        "若承诺无法在产品中体验，则降级传播"
+      ],
+      "confidence_boundary": [
+        "不做审美个人化判断"
+      ]
+    }
+  ],
+  "failure_modes": [
+    "把人物框架泛化到无关场景",
+    "把推断写成事实",
+    "缺少反证实验仍给高置信结论"
+  ],
+  "confidence_boundary": [
+    "只作为公开材料提炼的决策本体，不代表本人实时观点或背书"
+  ],
+  "source_map": [
+    {
+      "source": "personas/steve-jobs.md",
+      "type": "local dossier"
+    },
+    {
+      "source": "nuwa_distillations/steve-jobs/",
+      "type": "research artifact or source reference"
+    }
+  ],
+  "case_map": [
+    {
+      "case": "focus",
+      "lesson": "是否通过拒绝聚焦主张"
+    },
+    {
+      "case": "whole_widget",
+      "lesson": "端到端体验是否完整"
+    },
+    {
+      "case": "experience",
+      "lesson": "是否有可被记住的演示路径"
+    }
+  ],
+  "not_for": [
+    "冒充人物本人发言",
+    "替代法律、医疗、投资等专业意见",
+    "在无材料证据时强行给确定结论"
+  ],
+  "calibration_notes": [
+    "第一版只记录规则命中，不自动调整权重"
+  ]
+}

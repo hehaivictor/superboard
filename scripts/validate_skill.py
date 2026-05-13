@@ -38,9 +38,27 @@ REQUIRED_FILES = [
     "schemas/review_run.schema.json",
     "schemas/calibration_event.schema.json",
     "schemas/action_item.schema.json",
+    "ontology/schemas/persona_ontology.schema.json",
+    "ontology/schemas/committee_ontology.schema.json",
+    "ontology/schemas/ontology_trace.schema.json",
+    "scripts/validate_ontology.py",
+    "scripts/evaluate_ontology_quality.py",
+    "scripts/ontology_loader.py",
+    "scripts/ontology_matcher.py",
     "scripts/validate_skill.py",
     "scripts/audit_board_memo.py",
+    "PLANS.md",
+    ".harness/current_sprint.md",
+    ".harness/harness_check.py",
+    ".harness/harness_eval.py",
+    ".harness/tasks/ontology_schema_validation.yaml",
+    ".harness/tasks/ontology_trace_golden.yaml",
+    ".harness/tasks/board_memo_quality.yaml",
+    ".harness/tasks/web_ontology_smoke.yaml",
+    ".harness/tasks/record_followup_calibration.yaml",
+    "examples/ontology-evaluation-report.md",
     "tests/test_validate_skill.py",
+    "tests/test_validate_ontology.py",
 ]
 
 REQUIRED_PERSONA_FIELDS = [
@@ -134,7 +152,7 @@ DEEP_OUTPUTS = [
 ]
 
 EXPECTED_COMMITTEE_COUNT = 5
-EXPECTED_PERSONA_COUNT = 25
+EXPECTED_PERSONA_COUNT = 15
 REPLACED_PERSONA_IDS = [
     "mckinsey-strategy-partner",
     "bcg-growth-partner",

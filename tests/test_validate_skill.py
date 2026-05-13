@@ -335,6 +335,18 @@ class ValidateSkillTests(unittest.TestCase):
         self.assertEqual("test-model", attached["generation"]["model"])
         self.assertEqual(attached["board_memo"], attached["record"]["board_memo"])
 
+    def test_preview_payload_exposes_ontology_rule_hits(self) -> None:
+        payload = super_board_server.build_preview_payload(
+            "# 定价策略\n\n目标：验证企业版定价、竞品价格、客户支付意愿、毛利、获客成本和销售激励。",
+            "deep_board_review",
+            None,
+        )
+
+        self.assertIn("ontology_rule_hits", payload)
+        self.assertIn("ontology_trace", payload)
+        self.assertIn("committee_rule_matrix", payload)
+        self.assertGreaterEqual(len(payload["ontology_rule_hits"]), 1)
+
     def test_streaming_completion_reports_length_finish_reason(self) -> None:
         response = FakeStreamingResponse(
             [
@@ -562,7 +574,9 @@ class ValidateSkillTests(unittest.TestCase):
 
     def test_custom_personas_have_full_nuwa_artifacts(self) -> None:
         custom_personas = validate_skill.parse_custom_personas(ROOT / "sources/awesome-persona-skills.yaml")
-        self.assertEqual(17, len(custom_personas))
+        self.assertEqual(21, len(custom_personas))
+        for persona_id in ["peter-drucker", "rita-mcgrath", "richard-rumelt", "roger-martin"]:
+            self.assertIn(persona_id, custom_personas)
         for persona_id in custom_personas:
             artifact_root = ROOT / "nuwa_distillations" / persona_id
             for relative in validate_skill.REQUIRED_NUWA_RESEARCH_FILES:

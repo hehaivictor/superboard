@@ -1,0 +1,7 @@
+id: board_memo_quality
+name: 董事会建议书结构质量
+command: python3 scripts/validate_skill.py
+success_criteria:
+  - 模板包含证据包、假设账本、决策记录
+  - 深度样例包含反证、失败路径和 30 / 60 / 90 天行动
+  - 输出不重复重启建议书目录

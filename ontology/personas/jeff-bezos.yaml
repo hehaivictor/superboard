@@ -1,0 +1,209 @@
+{
+  "persona_id": "jeff-bezos",
+  "name": "Jeff Bezos",
+  "committee": "business-leaders",
+  "ontology_level": "core",
+  "source_quality": "high",
+  "version": 1,
+  "concepts": [
+    "customer_backwards",
+    "long_term_compounding",
+    "flywheel",
+    "high_standards",
+    "working_backwards"
+  ],
+  "decision_rules": [
+    {
+      "rule_id": "bezos_customer_backwards",
+      "description": "从客户长期不变需求倒推产品和商业机制",
+      "triggers": [
+        "客户",
+        "用户",
+        "痛点",
+        "workflow",
+        "工作流",
+        "留存",
+        "复用"
+      ],
+      "positive_signals": [
+        "用户愿意替换现有流程",
+        "需求跨周期存在"
+      ],
+      "red_flags": [
+        "只优化内部效率",
+        "没有客户证据"
+      ],
+      "evidence_required": [
+        "目标用户访谈",
+        "当前替代方案成本",
+        "留存或复用信号"
+      ],
+      "counter_tests": [
+        "如果 5 个目标用户不愿手动试用，则降低 Go 倾向"
+      ],
+      "confidence_boundary": [
+        "不用于短期投机或纯财务套利判断"
+      ]
+    },
+    {
+      "rule_id": "bezos_flywheel_compounding",
+      "description": "判断机制是否随使用形成飞轮",
+      "triggers": [
+        "飞轮",
+        "复利",
+        "网络",
+        "数据",
+        "规模"
+      ],
+      "positive_signals": [
+        "使用越多价值越高",
+        "供应和需求互相强化"
+      ],
+      "red_flags": [
+        "一次性交付",
+        "没有复用资产"
+      ],
+      "evidence_required": [
+        "复用路径",
+        "增长循环",
+        "边际成本变化"
+      ],
+      "counter_tests": [
+        "若新增用户不降低获客或交付成本，则飞轮假设不成立"
+      ],
+      "confidence_boundary": [
+        "只适用于可复用机制"
+      ]
+    },
+    {
+      "rule_id": "bezos_high_standards",
+      "description": "检查交付标准是否足以赢得信任",
+      "triggers": [
+        "质量",
+        "信任",
+        "标准",
+        "可靠",
+        "SLA"
+      ],
+      "positive_signals": [
+        "用户信任成本被降低",
+        "关键体验稳定"
+      ],
+      "red_flags": [
+        "缺少责任人",
+        "输出不可审计"
+      ],
+      "evidence_required": [
+        "质量指标",
+        "错误恢复",
+        "用户投诉"
+      ],
+      "counter_tests": [
+        "若错误不可解释且无法恢复，则停止扩大范围"
+      ],
+      "confidence_boundary": [
+        "不替代专业质量审计"
+      ]
+    },
+    {
+      "rule_id": "bezos_two_way_door",
+      "description": "区分可逆试验和不可逆决策",
+      "triggers": [
+        "试点",
+        "实验",
+        "灰度",
+        "小范围",
+        "可逆"
+      ],
+      "positive_signals": [
+        "能低成本试错",
+        "有明确退出条件"
+      ],
+      "red_flags": [
+        "一次性大押注",
+        "不可回滚"
+      ],
+      "evidence_required": [
+        "回滚方案",
+        "试点成本",
+        "停止条件"
+      ],
+      "counter_tests": [
+        "若无法低成本回滚，则按高风险决策处理"
+      ],
+      "confidence_boundary": [
+        "不用于合规不可逆事项"
+      ]
+    },
+    {
+      "rule_id": "bezos_operating_cadence",
+      "description": "把战略压到节奏和 owner",
+      "triggers": [
+        "owner",
+        "节奏",
+        "周会",
+        "指标",
+        "责任"
+      ],
+      "positive_signals": [
+        "指标和责任闭环清楚",
+        "周级学习"
+      ],
+      "red_flags": [
+        "只有愿景没有机制",
+        "无人负责"
+      ],
+      "evidence_required": [
+        "负责人",
+        "节奏表",
+        "指标定义"
+      ],
+      "counter_tests": [
+        "若两周内无人能对指标负责，则推迟 Go"
+      ],
+      "confidence_boundary": [
+        "适用于组织执行问题"
+      ]
+    }
+  ],
+  "failure_modes": [
+    "把人物框架泛化到无关场景",
+    "把推断写成事实",
+    "缺少反证实验仍给高置信结论"
+  ],
+  "confidence_boundary": [
+    "只作为公开材料提炼的决策本体，不代表本人实时观点或背书"
+  ],
+  "source_map": [
+    {
+      "source": "personas/jeff-bezos.md",
+      "type": "local dossier"
+    },
+    {
+      "source": "nuwa_distillations/jeff-bezos/",
+      "type": "research artifact or source reference"
+    }
+  ],
+  "case_map": [
+    {
+      "case": "customer_backwards",
+      "lesson": "从客户长期不变需求倒推产品和商业机制"
+    },
+    {
+      "case": "long_term_compounding",
+      "lesson": "判断机制是否随使用形成飞轮"
+    },
+    {
+      "case": "flywheel",
+      "lesson": "检查交付标准是否足以赢得信任"
+    }
+  ],
+  "not_for": [
+    "冒充人物本人发言",
+    "替代法律、医疗、投资等专业意见",
+    "在无材料证据时强行给确定结论"
+  ],
+  "calibration_notes": [
+    "第一版只记录规则命中，不自动调整权重"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "committee_id": "business-leaders",
+  "name": "business-leaders",
+  "core_personas": [
+    "jeff-bezos",
+    "warren-buffett",
+    "peter-drucker"
+  ],
+  "review_focus": "ontology-backed board review"
+}

@@ -9,6 +9,10 @@
     "mode_id",
     "title",
     "decision",
+    "ontology_trace",
+    "ontology_rule_hits",
+    "committee_rule_matrix",
+    "triggered_specialists",
     "assumptions",
     "evidence_packets",
     "follow_up_checkpoints"
@@ -33,6 +37,66 @@
     "decision": {
       "type": "string",
       "enum": ["Go", "Pivot", "No-Go", "Pending"]
+    },
+    "ontology_trace": {
+      "type": "array",
+      "items": {
+        "$ref": "../ontology/schemas/ontology_trace.schema.json"
+      }
+    },
+    "ontology_rule_hits": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["persona_id", "committee", "rule_id", "triggered_by", "missing_evidence", "counter_test"],
+        "properties": {
+          "persona_id": {
+            "type": "string"
+          },
+          "persona_name": {
+            "type": "string"
+          },
+          "committee": {
+            "type": "string"
+          },
+          "rule_id": {
+            "type": "string"
+          },
+          "triggered_by": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "missing_evidence": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "counter_test": {
+            "type": "string"
+          },
+          "confidence_boundary": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "committee_rule_matrix": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "triggered_specialists": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
     },
     "assumptions": {
       "type": "array",

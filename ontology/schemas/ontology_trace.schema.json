@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "persona_id",
+    "rule_id",
+    "committee",
+    "triggered_by",
+    "missing_evidence",
+    "counter_test"
+  ],
+  "properties": {
+    "persona_id": {
+      "type": "string"
+    },
+    "rule_id": {
+      "type": "string"
+    },
+    "triggered_by": {
+      "type": "array"
+    }
+  }
+}

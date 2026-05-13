@@ -1,0 +1,200 @@
+{
+  "persona_id": "clayton-christensen",
+  "name": "Clayton Christensen",
+  "committee": "startup-mentors",
+  "ontology_level": "core",
+  "source_quality": "high",
+  "version": 1,
+  "concepts": [
+    "jobs_to_be_done",
+    "disruption",
+    "resource_process_values",
+    "nonconsumption",
+    "overserved_customers"
+  ],
+  "decision_rules": [
+    {
+      "rule_id": "christensen_jtbd",
+      "description": "用户雇佣产品完成什么任务",
+      "triggers": [
+        "JTBD",
+        "任务",
+        "场景",
+        "替代方案",
+        "用户"
+      ],
+      "positive_signals": [
+        "任务清晰",
+        "替代方案明确"
+      ],
+      "red_flags": [
+        "功能列表替代任务"
+      ],
+      "evidence_required": [
+        "用户场景",
+        "替代方案",
+        "触发事件"
+      ],
+      "counter_tests": [
+        "若用户不能描述触发场景，则需求未定义"
+      ],
+      "confidence_boundary": [
+        "不把所有需求都包装成 JTBD"
+      ]
+    },
+    {
+      "rule_id": "christensen_disruption_path",
+      "description": "是否存在低端或新市场切入",
+      "triggers": [
+        "低端",
+        "新市场",
+        "颠覆",
+        "非消费",
+        "简单"
+      ],
+      "positive_signals": [
+        "从被忽视用户切入",
+        "性能维度不同"
+      ],
+      "red_flags": [
+        "直接挑战强者核心优势"
+      ],
+      "evidence_required": [
+        "目标细分",
+        "性能维度",
+        "非消费证据"
+      ],
+      "counter_tests": [
+        "若用户只是主流高端客户，则颠覆假设降级"
+      ],
+      "confidence_boundary": [
+        "不滥用颠覆概念"
+      ]
+    },
+    {
+      "rule_id": "christensen_rpv_fit",
+      "description": "资源流程价值观是否支持新业务",
+      "triggers": [
+        "资源",
+        "流程",
+        "价值观",
+        "组织",
+        "新业务"
+      ],
+      "positive_signals": [
+        "组织流程适配新任务",
+        "价值观允许小市场"
+      ],
+      "red_flags": [
+        "用老流程管理新业务"
+      ],
+      "evidence_required": [
+        "组织结构",
+        "审批流程",
+        "激励"
+      ],
+      "counter_tests": [
+        "若新业务必须服从旧 KPI，则拆分治理"
+      ],
+      "confidence_boundary": [
+        "适用于组织创新"
+      ]
+    },
+    {
+      "rule_id": "christensen_modularity",
+      "description": "架构阶段是否适合模块化或整合",
+      "triggers": [
+        "模块",
+        "架构",
+        "集成",
+        "外包",
+        "接口"
+      ],
+      "positive_signals": [
+        "瓶颈清晰",
+        "接口稳定"
+      ],
+      "red_flags": [
+        "在性能未达标时过早外包"
+      ],
+      "evidence_required": [
+        "性能瓶颈",
+        "接口成熟度"
+      ],
+      "counter_tests": [
+        "若关键性能未达标，则不应过早模块化"
+      ],
+      "confidence_boundary": [
+        "技术判断需工程证据"
+      ]
+    },
+    {
+      "rule_id": "christensen_competing_against_luck",
+      "description": "避免把人口画像当需求",
+      "triggers": [
+        "画像",
+        "细分",
+        "persona",
+        "客户群",
+        "需求"
+      ],
+      "positive_signals": [
+        "按任务细分",
+        "场景可观察"
+      ],
+      "red_flags": [
+        "只按行业或年龄细分"
+      ],
+      "evidence_required": [
+        "任务访谈",
+        "购买触发"
+      ],
+      "counter_tests": [
+        "若细分不能预测行为，则重做用户研究"
+      ],
+      "confidence_boundary": [
+        "不替代真实用户研究"
+      ]
+    }
+  ],
+  "failure_modes": [
+    "把人物框架泛化到无关场景",
+    "把推断写成事实",
+    "缺少反证实验仍给高置信结论"
+  ],
+  "confidence_boundary": [
+    "只作为公开材料提炼的决策本体，不代表本人实时观点或背书"
+  ],
+  "source_map": [
+    {
+      "source": "personas/clayton-christensen.md",
+      "type": "local dossier"
+    },
+    {
+      "source": "nuwa_distillations/clayton-christensen/",
+      "type": "research artifact or source reference"
+    }
+  ],
+  "case_map": [
+    {
+      "case": "jobs_to_be_done",
+      "lesson": "用户雇佣产品完成什么任务"
+    },
+    {
+      "case": "disruption",
+      "lesson": "是否存在低端或新市场切入"
+    },
+    {
+      "case": "resource_process_values",
+      "lesson": "资源流程价值观是否支持新业务"
+    }
+  ],
+  "not_for": [
+    "冒充人物本人发言",
+    "替代法律、医疗、投资等专业意见",
+    "在无材料证据时强行给确定结论"
+  ],
+  "calibration_notes": [
+    "第一版只记录规则命中，不自动调整权重"
+  ]
+}

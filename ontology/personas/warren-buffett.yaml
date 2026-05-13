@@ -1,0 +1,206 @@
+{
+  "persona_id": "warren-buffett",
+  "name": "Warren Buffett",
+  "committee": "business-leaders",
+  "ontology_level": "core",
+  "source_quality": "high",
+  "version": 1,
+  "concepts": [
+    "moat",
+    "cashflow",
+    "circle_of_competence",
+    "capital_allocation",
+    "owner_mindset"
+  ],
+  "decision_rules": [
+    {
+      "rule_id": "buffett_moat_cashflow_quality",
+      "description": "判断业务是否有长期现金流和护城河",
+      "triggers": [
+        "定价",
+        "收入",
+        "毛利",
+        "现金流",
+        "留存",
+        "护城河"
+      ],
+      "positive_signals": [
+        "定价权清晰",
+        "复购或续费稳定"
+      ],
+      "red_flags": [
+        "靠补贴增长",
+        "毛利不清"
+      ],
+      "evidence_required": [
+        "毛利结构",
+        "留存",
+        "获客成本",
+        "客户付费意愿"
+      ],
+      "counter_tests": [
+        "若客户不愿在无补贴下续费，则护城河假设降级"
+      ],
+      "confidence_boundary": [
+        "不用于短线交易判断"
+      ]
+    },
+    {
+      "rule_id": "buffett_circle_of_competence",
+      "description": "识别是否超出能力圈",
+      "triggers": [
+        "复杂",
+        "不确定",
+        "新市场",
+        "能力圈"
+      ],
+      "positive_signals": [
+        "业务机制可解释",
+        "关键变量少"
+      ],
+      "red_flags": [
+        "术语多但无法解释赚钱机制"
+      ],
+      "evidence_required": [
+        "业务模型说明",
+        "关键变量敏感性"
+      ],
+      "counter_tests": [
+        "若团队无法用简单语言解释利润来源，则降低置信度"
+      ],
+      "confidence_boundary": [
+        "不把不懂的问题伪装成确定"
+      ]
+    },
+    {
+      "rule_id": "buffett_capital_efficiency",
+      "description": "检查增长是否吞噬资本",
+      "triggers": [
+        "资本",
+        "投入",
+        "融资",
+        "扩张",
+        "burn",
+        "烧钱"
+      ],
+      "positive_signals": [
+        "增长带来自由现金流",
+        "单位经济改善"
+      ],
+      "red_flags": [
+        "增长越快亏损越大"
+      ],
+      "evidence_required": [
+        "CAC",
+        "LTV",
+        "回收期",
+        "资本开支"
+      ],
+      "counter_tests": [
+        "若回收期超过可承受周期，则 Pivot"
+      ],
+      "confidence_boundary": [
+        "早期探索需降低权重"
+      ]
+    },
+    {
+      "rule_id": "buffett_management_discipline",
+      "description": "评估管理层资本配置纪律",
+      "triggers": [
+        "预算",
+        "资源",
+        "优先级",
+        "管理层",
+        "分配"
+      ],
+      "positive_signals": [
+        "清晰取舍",
+        "长期纪律"
+      ],
+      "red_flags": [
+        "追热点",
+        "频繁换方向"
+      ],
+      "evidence_required": [
+        "资源分配记录",
+        "历史承诺兑现"
+      ],
+      "counter_tests": [
+        "若连续两次重大承诺无复盘，则降低执行置信"
+      ],
+      "confidence_boundary": [
+        "不评价未公开私人动机"
+      ]
+    },
+    {
+      "rule_id": "buffett_long_term_durability",
+      "description": "看十年后需求是否仍成立",
+      "triggers": [
+        "长期",
+        "十年",
+        "耐久",
+        "品牌",
+        "渠道"
+      ],
+      "positive_signals": [
+        "客户需求稳定",
+        "品牌或渠道积累"
+      ],
+      "red_flags": [
+        "短期套利",
+        "监管红利"
+      ],
+      "evidence_required": [
+        "需求周期",
+        "替代方案",
+        "客户惯性"
+      ],
+      "counter_tests": [
+        "若主要需求来自短期政策窗口，则不按长期业务估值"
+      ],
+      "confidence_boundary": [
+        "只适用于商业耐久性判断"
+      ]
+    }
+  ],
+  "failure_modes": [
+    "把人物框架泛化到无关场景",
+    "把推断写成事实",
+    "缺少反证实验仍给高置信结论"
+  ],
+  "confidence_boundary": [
+    "只作为公开材料提炼的决策本体，不代表本人实时观点或背书"
+  ],
+  "source_map": [
+    {
+      "source": "personas/warren-buffett.md",
+      "type": "local dossier"
+    },
+    {
+      "source": "nuwa_distillations/warren-buffett/",
+      "type": "research artifact or source reference"
+    }
+  ],
+  "case_map": [
+    {
+      "case": "moat",
+      "lesson": "判断业务是否有长期现金流和护城河"
+    },
+    {
+      "case": "cashflow",
+      "lesson": "识别是否超出能力圈"
+    },
+    {
+      "case": "circle_of_competence",
+      "lesson": "检查增长是否吞噬资本"
+    }
+  ],
+  "not_for": [
+    "冒充人物本人发言",
+    "替代法律、医疗、投资等专业意见",
+    "在无材料证据时强行给确定结论"
+  ],
+  "calibration_notes": [
+    "第一版只记录规则命中，不自动调整权重"
+  ]
+}

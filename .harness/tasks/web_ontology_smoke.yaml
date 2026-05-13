@@ -1,0 +1,7 @@
+id: web_ontology_smoke
+name: Web 本体工作台构建
+command: cd web && npm run build
+success_criteria:
+  - 前端类型检查通过
+  - 右侧详情包含本体触发和规则链入口
+  - 生产构建可生成 dist

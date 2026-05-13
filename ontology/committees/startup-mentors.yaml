@@ -1,0 +1,10 @@
+{
+  "committee_id": "startup-mentors",
+  "name": "startup-mentors",
+  "core_personas": [
+    "paul-graham",
+    "clayton-christensen",
+    "rita-mcgrath"
+  ],
+  "review_focus": "ontology-backed board review"
+}

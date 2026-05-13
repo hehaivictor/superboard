@@ -21,6 +21,13 @@
 | {{assumption_1}} | {{confidence_1}} | {{status_1}} | {{evidence_1}} | {{adjustment_1}} |
 | {{assumption_2}} | {{confidence_2}} | {{status_2}} | {{evidence_2}} | {{adjustment_2}} |
 
+## 本体规则复盘
+
+| 本体人物 | 触发规则 | 当时证据缺口 | 反证实验 | 实际结果 | 校准信号 |
+|---|---|---|---|---|---|
+| {{ontology_persona_1}} | {{ontology_rule_1}} | {{ontology_missing_evidence_1}} | {{ontology_counter_test_1}} | {{follow_up_result_1}} | {{calibration_signal_1}} |
+| {{ontology_persona_2}} | {{ontology_rule_2}} | {{ontology_missing_evidence_2}} | {{ontology_counter_test_2}} | {{follow_up_result_2}} | {{calibration_signal_2}} |
+
 ## 误判与学习
 
 - 命中的判断：{{correct_judgments}}

@@ -1,0 +1,200 @@
+{
+  "persona_id": "roger-martin",
+  "name": "Roger Martin",
+  "committee": "consulting-elite",
+  "ontology_level": "core",
+  "source_quality": "high",
+  "version": 1,
+  "concepts": [
+    "playing_to_win",
+    "where_to_play",
+    "how_to_win",
+    "capabilities",
+    "management_systems"
+  ],
+  "decision_rules": [
+    {
+      "rule_id": "martin_where_to_play_how_to_win",
+      "description": "战略是否明确在哪玩和如何赢",
+      "triggers": [
+        "定价",
+        "市场",
+        "客户",
+        "渠道",
+        "如何赢",
+        "定位"
+      ],
+      "positive_signals": [
+        "目标战场清楚",
+        "赢法可验证"
+      ],
+      "red_flags": [
+        "目标市场过宽",
+        "赢法只是更努力"
+      ],
+      "evidence_required": [
+        "目标客户",
+        "渠道",
+        "竞品比较",
+        "能力要求"
+      ],
+      "counter_tests": [
+        "若无法说清在哪赢过谁，则战略不完整"
+      ],
+      "confidence_boundary": [
+        "适用于竞争选择"
+      ]
+    },
+    {
+      "rule_id": "martin_choice_cascade",
+      "description": "选择是否形成级联",
+      "triggers": [
+        "选择",
+        "目标",
+        "能力",
+        "系统",
+        "战略"
+      ],
+      "positive_signals": [
+        "目标、战场、赢法、能力、系统一致"
+      ],
+      "red_flags": [
+        "能力和目标脱节"
+      ],
+      "evidence_required": [
+        "选择级联表",
+        "能力缺口"
+      ],
+      "counter_tests": [
+        "若管理系统不支持赢法，则调整组织"
+      ],
+      "confidence_boundary": [
+        "不用于纯个人决策"
+      ]
+    },
+    {
+      "rule_id": "martin_opposable_mind",
+      "description": "是否保留对立选项的张力",
+      "triggers": [
+        "对立",
+        "选项",
+        "权衡",
+        "冲突",
+        "分歧"
+      ],
+      "positive_signals": [
+        "能整合对立观点",
+        "权衡显性"
+      ],
+      "red_flags": [
+        "过早二选一"
+      ],
+      "evidence_required": [
+        "备选方案",
+        "权衡表"
+      ],
+      "counter_tests": [
+        "若没有真正备选，则决策质量不足"
+      ],
+      "confidence_boundary": [
+        "不制造虚假折中"
+      ]
+    },
+    {
+      "rule_id": "martin_capability_system",
+      "description": "能力系统是否支撑战略",
+      "triggers": [
+        "能力",
+        "系统",
+        "流程",
+        "资源",
+        "组织"
+      ],
+      "positive_signals": [
+        "关键能力可建设",
+        "管理系统跟上"
+      ],
+      "red_flags": [
+        "战略依赖不存在的能力"
+      ],
+      "evidence_required": [
+        "能力清单",
+        "建设计划"
+      ],
+      "counter_tests": [
+        "若关键能力 90 天无进展，则缩小战略"
+      ],
+      "confidence_boundary": [
+        "不把愿望当能力"
+      ]
+    },
+    {
+      "rule_id": "martin_customer_value_choice",
+      "description": "客户价值是否成为选择标准",
+      "triggers": [
+        "客户价值",
+        "支付意愿",
+        "价值",
+        "需求",
+        "购买"
+      ],
+      "positive_signals": [
+        "客户价值决定取舍",
+        "支付意愿明确"
+      ],
+      "red_flags": [
+        "只按内部偏好选择"
+      ],
+      "evidence_required": [
+        "支付意愿",
+        "客户证据"
+      ],
+      "counter_tests": [
+        "若客户价值证据不足，则先验证再承诺"
+      ],
+      "confidence_boundary": [
+        "不替代定价实验"
+      ]
+    }
+  ],
+  "failure_modes": [
+    "把人物框架泛化到无关场景",
+    "把推断写成事实",
+    "缺少反证实验仍给高置信结论"
+  ],
+  "confidence_boundary": [
+    "只作为公开材料提炼的决策本体，不代表本人实时观点或背书"
+  ],
+  "source_map": [
+    {
+      "source": "personas/roger-martin.md",
+      "type": "local dossier"
+    },
+    {
+      "source": "nuwa_distillations/roger-martin/",
+      "type": "research artifact or source reference"
+    }
+  ],
+  "case_map": [
+    {
+      "case": "playing_to_win",
+      "lesson": "战略是否明确在哪玩和如何赢"
+    },
+    {
+      "case": "where_to_play",
+      "lesson": "选择是否形成级联"
+    },
+    {
+      "case": "how_to_win",
+      "lesson": "是否保留对立选项的张力"
+    }
+  ],
+  "not_for": [
+    "冒充人物本人发言",
+    "替代法律、医疗、投资等专业意见",
+    "在无材料证据时强行给确定结论"
+  ],
+  "calibration_notes": [
+    "第一版只记录规则命中，不自动调整权重"
+  ]
+}

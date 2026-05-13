@@ -22,6 +22,19 @@ def render_followup(record: dict[str, object], checkpoint: int) -> str:
     evidence_lines = "\n".join(
         f"- {item.get('claim', item)}" if isinstance(item, dict) else f"- {item}" for item in evidence
     )
+    ontology_hits = record.get("ontology_rule_hits", [])
+    ontology_lines = "\n".join(
+        "- {persona} / {rule}：触发 {triggers}；缺口 {missing}；反证 {counter}".format(
+            persona=item.get("persona_id", ""),
+            rule=item.get("rule_id", ""),
+            triggers=", ".join(str(value) for value in item.get("triggered_by", [])),
+            missing=", ".join(str(value) for value in item.get("missing_evidence", [])),
+            counter=item.get("counter_test", ""),
+        )
+        if isinstance(item, dict)
+        else f"- {item}"
+        for item in ontology_hits
+    )
     return f"""# Super Board Follow-up Prompt
 
 ## Record
@@ -40,9 +53,13 @@ def render_followup(record: dict[str, object], checkpoint: int) -> str:
 
 {evidence_lines or "- 未记录"}
 
+## 本体规则命中
+
+{ontology_lines or "- 未记录"}
+
 ## Review Instructions
 
-使用 `templates/follow-up-review.md` 输出复盘审查。必须记录实际结果、假设命中情况、误判原因、下次调整和新的 Go / Pivot / No-Go 建议。不要补造不存在的结果；如果缺少结果证据，明确列出需要补充的事实。
+使用 `templates/follow-up-review.md` 输出复盘审查。必须记录实际结果、假设命中情况、本体规则命中是否有效、误判原因、下次调整和新的 Go / Pivot / No-Go 建议。不要补造不存在的结果；如果缺少结果证据，明确列出需要补充的事实。
 """
 
 

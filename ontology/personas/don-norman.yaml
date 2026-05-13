@@ -1,0 +1,199 @@
+{
+  "persona_id": "don-norman",
+  "name": "Don Norman",
+  "committee": "product-users",
+  "ontology_level": "core",
+  "source_quality": "high",
+  "version": 1,
+  "concepts": [
+    "human_centered_design",
+    "affordance",
+    "feedback",
+    "error_recovery",
+    "cognitive_load"
+  ],
+  "decision_rules": [
+    {
+      "rule_id": "norman_cognitive_load",
+      "description": "用户认知负担是否过高",
+      "triggers": [
+        "认知",
+        "复杂",
+        "界面",
+        "用户",
+        "学习成本"
+      ],
+      "positive_signals": [
+        "概念少",
+        "路径清楚"
+      ],
+      "red_flags": [
+        "用户必须理解内部系统"
+      ],
+      "evidence_required": [
+        "可用性测试",
+        "任务完成时间"
+      ],
+      "counter_tests": [
+        "若新用户无法独立完成核心任务，则简化"
+      ],
+      "confidence_boundary": [
+        "不替代可用性研究"
+      ]
+    },
+    {
+      "rule_id": "norman_feedback_visibility",
+      "description": "系统反馈是否清楚",
+      "triggers": [
+        "反馈",
+        "状态",
+        "生成中",
+        "进度",
+        "错误",
+        "可见"
+      ],
+      "positive_signals": [
+        "状态可见",
+        "错误可恢复"
+      ],
+      "red_flags": [
+        "无反馈或静默失败"
+      ],
+      "evidence_required": [
+        "状态设计",
+        "错误日志",
+        "用户测试"
+      ],
+      "counter_tests": [
+        "若用户不知道系统在做什么，则体验失败"
+      ],
+      "confidence_boundary": [
+        "适用于交互系统"
+      ]
+    },
+    {
+      "rule_id": "norman_error_recovery",
+      "description": "错误是否可预防和恢复",
+      "triggers": [
+        "错误",
+        "恢复",
+        "撤销",
+        "失败",
+        "容错"
+      ],
+      "positive_signals": [
+        "错误有解释和恢复路径",
+        "危险操作可撤销"
+      ],
+      "red_flags": [
+        "失败信息不可行动"
+      ],
+      "evidence_required": [
+        "错误分类",
+        "恢复流程"
+      ],
+      "counter_tests": [
+        "若常见错误无法恢复，则不能扩大使用"
+      ],
+      "confidence_boundary": [
+        "不替代安全审计"
+      ]
+    },
+    {
+      "rule_id": "norman_mapping_affordance",
+      "description": "控件和概念映射是否自然",
+      "triggers": [
+        "按钮",
+        "控件",
+        "映射",
+        "操作",
+        "入口"
+      ],
+      "positive_signals": [
+        "用户能预期操作结果",
+        "入口清楚"
+      ],
+      "red_flags": [
+        "标签和结果不匹配"
+      ],
+      "evidence_required": [
+        "任务走查",
+        "点击测试"
+      ],
+      "counter_tests": [
+        "若用户误解主要按钮，则改交互"
+      ],
+      "confidence_boundary": [
+        "适用于 UI/工作流"
+      ]
+    },
+    {
+      "rule_id": "norman_human_system_fit",
+      "description": "系统是否适配人的真实工作",
+      "triggers": [
+        "工作流",
+        "习惯",
+        "上下文",
+        "协作",
+        "任务"
+      ],
+      "positive_signals": [
+        "嵌入真实任务",
+        "减少中断"
+      ],
+      "red_flags": [
+        "要求用户迁就系统"
+      ],
+      "evidence_required": [
+        "现场观察",
+        "任务日志"
+      ],
+      "counter_tests": [
+        "若系统增加额外步骤且无明显收益，则 Pivot"
+      ],
+      "confidence_boundary": [
+        "不替代组织流程设计"
+      ]
+    }
+  ],
+  "failure_modes": [
+    "把人物框架泛化到无关场景",
+    "把推断写成事实",
+    "缺少反证实验仍给高置信结论"
+  ],
+  "confidence_boundary": [
+    "只作为公开材料提炼的决策本体，不代表本人实时观点或背书"
+  ],
+  "source_map": [
+    {
+      "source": "personas/don-norman.md",
+      "type": "local dossier"
+    },
+    {
+      "source": "nuwa_distillations/don-norman/",
+      "type": "research artifact or source reference"
+    }
+  ],
+  "case_map": [
+    {
+      "case": "human_centered_design",
+      "lesson": "用户认知负担是否过高"
+    },
+    {
+      "case": "affordance",
+      "lesson": "系统反馈是否清楚"
+    },
+    {
+      "case": "feedback",
+      "lesson": "错误是否可预防和恢复"
+    }
+  ],
+  "not_for": [
+    "冒充人物本人发言",
+    "替代法律、医疗、投资等专业意见",
+    "在无材料证据时强行给确定结论"
+  ],
+  "calibration_notes": [
+    "第一版只记录规则命中，不自动调整权重"
+  ]
+}

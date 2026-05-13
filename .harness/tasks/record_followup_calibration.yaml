@@ -1,0 +1,7 @@
+id: record_followup_calibration
+name: 记录复盘与校准链路
+command: python3 -m unittest tests/test_validate_ontology.py
+success_criteria:
+  - 决策记录包含 ontology_trace 和 ontology_rule_hits
+  - follow-up prompt 展示本体规则命中
+  - schema 声明可复盘字段

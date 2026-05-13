@@ -1,0 +1,7 @@
+id: ontology_schema_validation
+name: 本体 schema 与董事会配置校验
+command: python3 scripts/validate_ontology.py
+success_criteria:
+  - 15 个核心本体人物存在且顺序稳定
+  - 本体规则包含证据缺口、反证实验和置信边界
+  - 按需触发专家不参与核心投票

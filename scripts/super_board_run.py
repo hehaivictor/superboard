@@ -11,6 +11,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+SCRIPT_DIR = Path(__file__).resolve().parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+import ontology_matcher
+
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_MODE = "deep_board_review"
@@ -110,7 +116,7 @@ def load_modes(root: Path = ROOT) -> dict[str, dict[str, object]]:
 
 def infer_input_type(text: str, path: Path) -> str:
     haystack = f"{path.name}\n{text}".lower()
-    if any(token in haystack for token in ["融资", "商业模式", "市场进入", "gtm", "business"]):
+    if any(token in haystack for token in ["融资", "商业模式", "市场进入", "定价", "获客成本", "客户支付", "gtm", "business"]):
         return "business_plan"
     if any(token in haystack for token in ["里程碑", "项目计划", "迁移", "资源安排", "project"]):
         return "project_plan"
@@ -203,6 +209,22 @@ def build_review_run(mode_id: str) -> dict[str, object]:
     }
 
 
+def compact_ontology_rule_hits(trace: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [
+        {
+            "persona_id": hit.get("persona_id", ""),
+            "persona_name": hit.get("persona_name", ""),
+            "committee": hit.get("committee", ""),
+            "rule_id": hit.get("rule_id", ""),
+            "triggered_by": hit.get("triggered_by", []),
+            "missing_evidence": hit.get("missing_evidence", []),
+            "counter_test": hit.get("counter_test", ""),
+            "confidence_boundary": hit.get("confidence_boundary", []),
+        }
+        for hit in trace
+    ]
+
+
 def first_source_block(material_pack: dict[str, Any]) -> dict[str, Any]:
     blocks = material_pack.get("source_blocks") or []
     if blocks and isinstance(blocks[0], dict):
@@ -225,6 +247,9 @@ def build_record(
     source_excerpt = source_text[:220] + ("..." if len(source_text) > 220 else "")
     review_run = build_review_run(mode_id)
     decision_id = decision_id_for(title, mode_id, created_at)
+    ontology_trace = ontology_matcher.match_ontology_trace(ROOT, text)
+    ontology_rule_hits = compact_ontology_rule_hits(ontology_trace)
+    committee_rule_matrix = ontology_matcher.committee_rule_matrix(ontology_trace)
     return {
         "decision_id": decision_id,
         "created_at": created_at,
@@ -234,6 +259,10 @@ def build_record(
         "decision": "Pending",
         "material_pack": normalized_pack,
         "review_run": review_run,
+        "ontology_trace": ontology_trace,
+        "ontology_rule_hits": ontology_rule_hits,
+        "committee_rule_matrix": committee_rule_matrix,
+        "triggered_specialists": [],
         "assumptions": [
             {
                 "assumption": "审议尚未由模型完成，此记录为运行器生成的待填充骨架。",
@@ -310,6 +339,18 @@ def build_prompt_bundle(input_path: Path, text: str, mode: dict[str, object], re
         for stage in record.get("review_run", {}).get("stages", [])  # type: ignore[union-attr]
         if isinstance(stage, dict)
     )
+    rule_hits = record.get("ontology_rule_hits", [])
+    rule_hit_lines = "\n".join(
+        "- {committee} / {persona} / {rule}：触发词 {triggers}；反证 {counter}".format(
+            committee=hit.get("committee", ""),
+            persona=hit.get("persona_id", ""),
+            rule=hit.get("rule_id", ""),
+            triggers=", ".join(str(item) for item in hit.get("triggered_by", [])),
+            counter=hit.get("counter_test", ""),
+        )
+        for hit in rule_hits
+        if isinstance(hit, dict)
+    )
     return f"""# 超级董事会提示包
 
 ## 决策记录
@@ -348,6 +389,10 @@ def build_prompt_bundle(input_path: Path, text: str, mode: dict[str, object], re
 ## 审议流程
 
 {stage_lines}
+
+## 本体触发摘要
+
+{rule_hit_lines or "- 暂无本体规则命中；请在模型审议时明确说明证据缺口。"}
 
 ## 执行说明
 
@@ -393,6 +438,8 @@ def build_board_memo(input_path: Path, text: str, mode: dict[str, object], recor
     assumptions = record.get("assumptions", [])
     checkpoints = record.get("follow_up_checkpoints", [])
     actions = record.get("action_items", [])
+    rule_hits = record.get("ontology_rule_hits", [])
+    committee_rule_matrix = record.get("committee_rule_matrix", [])
     material_pack = record.get("material_pack", {}) if isinstance(record.get("material_pack"), dict) else {}
     file_count = len(material_pack.get("files", [])) if isinstance(material_pack, dict) else 0
     source_block_count = len(material_pack.get("source_blocks", [])) if isinstance(material_pack, dict) else 0
@@ -434,7 +481,19 @@ def build_board_memo(input_path: Path, text: str, mode: dict[str, object], recor
 
 1. 输入材料已被拆解为来源块，首个可引用来源为 `{source_block_id}`。
 2. 所有后续判断都应绑定来源块，避免把推断写成事实。
-3. 本地草案只提供结构，不替代模型董事会审议。
+3. 本体规则命中用于约束董事会审议角度，不替代模型董事会审议。
+
+### 本体触发摘要
+
+```json
+{json.dumps(rule_hits, ensure_ascii=False, indent=2)}
+```
+
+### 委员会规则矩阵
+
+```json
+{json.dumps(committee_rule_matrix, ensure_ascii=False, indent=2)}
+```
 
 ## 5. 五个委员会意见
 

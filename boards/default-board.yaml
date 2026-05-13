@@ -1,6 +1,6 @@
 board_id: default
-name: Super Board 默认董事会
-description: 产品需求、项目计划、商业计划的多委员会审议配置。
+name: Super Board 本体董事会
+description: 产品需求、项目计划、商业计划的多委员会本体化审议配置。
 supported_input_types:
   - product_requirement
   - project_plan
@@ -8,51 +8,78 @@ supported_input_types:
 committees:
   - id: business-leaders
     name: 商业委员会
-    review_focus: 产品直觉、品牌、长期战略、客户倒推、组织执行。
-    output_expectations: 判断方向是否足够重要、差异化是否清晰、组织是否能交付。
+    review_focus: 客户倒推、长期商业质量、管理责任和组织使命。
+    output_expectations: 判断方向是否足够重要、现金流和护城河是否成立、组织是否能交付。
     personas:
-      - steve-jobs
-      - elon-musk
       - jeff-bezos
-      - zhang-yiming
-      - lou-gerstner
+      - warren-buffett
+      - peter-drucker
   - id: startup-mentors
     name: 创业委员会
-    review_focus: 创业起点、用户痛点、增长路径、网络效应、融资叙事。
-    output_expectations: 判断是否有真实用户拉力、是否能从小切口进入大市场。
+    review_focus: 早期用户强痛点、颠覆式路径、高不确定性假设验证。
+    output_expectations: 判断是否有真实用户拉力、是否能从小切口学习并进入大市场。
     personas:
       - paul-graham
-      - sam-altman
-      - reid-hoffman
-      - marc-andreessen
-      - peter-thiel
+      - clayton-christensen
+      - rita-mcgrath
   - id: investment-masters
     name: 投资委员会
-    review_focus: 商业质量、现金流、护城河、误判、反身性、周期与尾部风险。
-    output_expectations: 判断长期价值、下行风险、资本效率和反脆弱性。
+    review_focus: 误判、激励、尾部风险、系统周期和资本效率。
+    output_expectations: 判断长期价值、下行风险、资本效率和可恢复性。
     personas:
-      - warren-buffett
       - charlie-munger
       - nassim-taleb
-      - george-soros
       - ray-dalio
   - id: consulting-elite
     name: 咨询委员会
-    review_focus: 竞争战略、市场结构、创新路径、资源配置、运营改善。
+    review_focus: 竞争战略、关键诊断、战略选择和连贯行动。
     output_expectations: 判断战略选项、执行路径、组织协同和可衡量结果。
     personas:
       - michael-porter
-      - clayton-christensen
-      - marvin-bower
-      - bruce-henderson
-      - orit-gadiesh
+      - richard-rumelt
+      - roger-martin
   - id: product-users
     name: 产品委员会
-    review_focus: 可解释性、用户体验、产品发现、认知负担、团队协作。
+    review_focus: 产品发现、人因体验、端到端体验和用户可感知价值。
     output_expectations: 判断用户价值、使用阻力、产品风险和下一步实验。
     personas:
-      - richard-feynman
-      - naval-ravikant
-      - don-norman
       - marty-cagan
-      - julie-zhuo
+      - don-norman
+      - steve-jobs
+core_board:
+  business-leaders:
+    - jeff-bezos
+    - warren-buffett
+    - peter-drucker
+  startup-mentors:
+    - paul-graham
+    - clayton-christensen
+    - rita-mcgrath
+  investment-masters:
+    - charlie-munger
+    - nassim-taleb
+    - ray-dalio
+  consulting-elite:
+    - michael-porter
+    - richard-rumelt
+    - roger-martin
+  product-users:
+    - marty-cagan
+    - don-norman
+    - steve-jobs
+triggered_specialists:
+  ai_scaling: [sam-altman]
+  leverage: [naval-ravikant]
+  extreme_engineering: [elon-musk]
+  information_efficiency: [zhang-yiming]
+  platform_growth: [reid-hoffman]
+  reflexivity: [george-soros]
+  design_management: [julie-zhuo]
+  enterprise_transformation: [lou-gerstner]
+  experience_curve: [bruce-henderson]
+distilled_archive:
+  - orit-gadiesh
+  - marvin-bower
+  - marc-andreessen
+  - peter-thiel
+  - richard-feynman

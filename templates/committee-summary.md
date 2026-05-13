@@ -4,6 +4,13 @@
 
 {{review_focus}}
 
+## 本体规则命中
+
+| Persona | 规则 | 触发词 | 证据缺口 | 反证实验 |
+|---|---|---|---|---|
+| {{ontology_persona_1}} | {{ontology_rule_1}} | {{ontology_trigger_1}} | {{ontology_missing_evidence_1}} | {{ontology_counter_test_1}} |
+| {{ontology_persona_2}} | {{ontology_rule_2}} | {{ontology_trigger_2}} | {{ontology_missing_evidence_2}} | {{ontology_counter_test_2}} |
+
 ## 组内共识
 
 - {{consensus_1}}

@@ -1,0 +1,18 @@
+[
+  {
+    "persona_id": "warren-buffett",
+    "rule_id": "buffett_moat_cashflow_quality"
+  },
+  {
+    "persona_id": "michael-porter",
+    "rule_id": "porter_competitive_positioning"
+  },
+  {
+    "persona_id": "roger-martin",
+    "rule_id": "martin_where_to_play_how_to_win"
+  },
+  {
+    "persona_id": "charlie-munger",
+    "rule_id": "munger_incentive_misalignment"
+  }
+]

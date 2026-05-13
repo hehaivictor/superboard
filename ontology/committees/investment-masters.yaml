@@ -1,0 +1,10 @@
+{
+  "committee_id": "investment-masters",
+  "name": "investment-masters",
+  "core_personas": [
+    "charlie-munger",
+    "nassim-taleb",
+    "ray-dalio"
+  ],
+  "review_focus": "ontology-backed board review"
+}

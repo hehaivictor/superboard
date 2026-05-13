@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "persona_id",
+    "name",
+    "committee",
+    "ontology_level",
+    "source_quality",
+    "version",
+    "concepts",
+    "decision_rules",
+    "failure_modes",
+    "confidence_boundary",
+    "source_map",
+    "case_map",
+    "not_for",
+    "calibration_notes"
+  ],
+  "properties": {
+    "persona_id": {
+      "type": "string"
+    },
+    "ontology_level": {
+      "enum": [
+        "core",
+        "triggered_specialist",
+        "distilled_archive"
+      ]
+    },
+    "decision_rules": {
+      "type": "array"
+    }
+  }
+}

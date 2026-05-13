@@ -23,7 +23,7 @@ from urllib.parse import urlparse
 WEB_ROOT = Path(__file__).resolve().parent
 ROOT = WEB_ROOT.parent
 DIST_ROOT = WEB_ROOT / "dist"
-PORT = 8766
+PORT = int(os.environ.get("SUPER_BOARD_WEB_PORT", "8766"))
 MODEL_CONFIG_PATH = ROOT / ".super-board-model.json"
 GENERATION_JOBS: dict[str, dict[str, object]] = {}
 GENERATION_JOBS_LOCK = threading.Lock()
@@ -444,6 +444,9 @@ def build_preview_payload(material: str, mode_id: str, material_pack: object) ->
         "assumptions": record["assumptions"],
         "material_pack": record["material_pack"],
         "review_run": record["review_run"],
+        "ontology_trace": record["ontology_trace"],
+        "ontology_rule_hits": record["ontology_rule_hits"],
+        "committee_rule_matrix": record["committee_rule_matrix"],
         "action_items": record["action_items"],
         "calibration_events": record["calibration_events"],
         "generated_by": "local_draft",

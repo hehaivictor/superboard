@@ -1,0 +1,201 @@
+{
+  "persona_id": "peter-drucker",
+  "name": "Peter Drucker",
+  "committee": "business-leaders",
+  "ontology_level": "core",
+  "source_quality": "high",
+  "version": 1,
+  "concepts": [
+    "management_by_objectives",
+    "knowledge_worker",
+    "customer_creation",
+    "effective_executive",
+    "mission"
+  ],
+  "decision_rules": [
+    {
+      "rule_id": "drucker_customer_creation",
+      "description": "企业目的是否创造客户",
+      "triggers": [
+        "客户",
+        "市场",
+        "需求",
+        "价值",
+        "销售"
+      ],
+      "positive_signals": [
+        "明确客户和购买理由",
+        "价值可被客户感知"
+      ],
+      "red_flags": [
+        "内部指标替代客户价值"
+      ],
+      "evidence_required": [
+        "目标客户定义",
+        "购买场景",
+        "价值证据"
+      ],
+      "counter_tests": [
+        "若客户无法说出为什么购买，则重写目标"
+      ],
+      "confidence_boundary": [
+        "不替代销售访谈"
+      ]
+    },
+    {
+      "rule_id": "drucker_objective_clarity",
+      "description": "目标是否可管理和可衡量",
+      "triggers": [
+        "目标",
+        "OKR",
+        "指标",
+        "里程碑",
+        "结果"
+      ],
+      "positive_signals": [
+        "目标少且可验收",
+        "指标连接业务结果"
+      ],
+      "red_flags": [
+        "指标很多但无决策用途"
+      ],
+      "evidence_required": [
+        "目标树",
+        "验收口径",
+        "负责人"
+      ],
+      "counter_tests": [
+        "若指标不能指导取舍，则目标管理失败"
+      ],
+      "confidence_boundary": [
+        "不鼓励指标崇拜"
+      ]
+    },
+    {
+      "rule_id": "drucker_effective_executive",
+      "description": "检查管理者是否聚焦贡献",
+      "triggers": [
+        "管理",
+        "负责人",
+        "贡献",
+        "决策",
+        "时间"
+      ],
+      "positive_signals": [
+        "负责人知道贡献是什么",
+        "时间投向关键结果"
+      ],
+      "red_flags": [
+        "会议多但产出少"
+      ],
+      "evidence_required": [
+        "责任矩阵",
+        "决策日志",
+        "时间投入"
+      ],
+      "counter_tests": [
+        "若关键人时间未投向关键瓶颈，则推迟扩张"
+      ],
+      "confidence_boundary": [
+        "适用于组织管理问题"
+      ]
+    },
+    {
+      "rule_id": "drucker_knowledge_worker_context",
+      "description": "知识工作者是否获得上下文和自主权",
+      "triggers": [
+        "知识工作",
+        "上下文",
+        "协作",
+        "团队",
+        "授权"
+      ],
+      "positive_signals": [
+        "团队理解目标和约束",
+        "能自主判断"
+      ],
+      "red_flags": [
+        "只靠审批流控制"
+      ],
+      "evidence_required": [
+        "信息流",
+        "决策权限",
+        "反馈机制"
+      ],
+      "counter_tests": [
+        "若一线无法解释决策背景，则组织上下文不足"
+      ],
+      "confidence_boundary": [
+        "不等同于无管理"
+      ]
+    },
+    {
+      "rule_id": "drucker_abandonment",
+      "description": "是否有系统性放弃低价值事项",
+      "triggers": [
+        "放弃",
+        "取舍",
+        "优先级",
+        "聚焦",
+        "删除"
+      ],
+      "positive_signals": [
+        "明确停止项",
+        "资源回收"
+      ],
+      "red_flags": [
+        "所有旧项目继续占资源"
+      ],
+      "evidence_required": [
+        "停止清单",
+        "资源再分配"
+      ],
+      "counter_tests": [
+        "若没有停止清单，则新增计划不可信"
+      ],
+      "confidence_boundary": [
+        "不用于无证据砍掉核心能力"
+      ]
+    }
+  ],
+  "failure_modes": [
+    "把人物框架泛化到无关场景",
+    "把推断写成事实",
+    "缺少反证实验仍给高置信结论"
+  ],
+  "confidence_boundary": [
+    "只作为公开材料提炼的决策本体，不代表本人实时观点或背书"
+  ],
+  "source_map": [
+    {
+      "source": "personas/peter-drucker.md",
+      "type": "local dossier"
+    },
+    {
+      "source": "nuwa_distillations/peter-drucker/",
+      "type": "research artifact or source reference"
+    }
+  ],
+  "case_map": [
+    {
+      "case": "management_by_objectives",
+      "lesson": "企业目的是否创造客户"
+    },
+    {
+      "case": "knowledge_worker",
+      "lesson": "目标是否可管理和可衡量"
+    },
+    {
+      "case": "customer_creation",
+      "lesson": "检查管理者是否聚焦贡献"
+    }
+  ],
+  "not_for": [
+    "冒充人物本人发言",
+    "替代法律、医疗、投资等专业意见",
+    "在无材料证据时强行给确定结论"
+  ],
+  "calibration_notes": [
+    "第一版只记录规则命中，不自动调整权重"
+  ]
+}

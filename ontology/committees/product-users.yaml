@@ -1,0 +1,10 @@
+{
+  "committee_id": "product-users",
+  "name": "product-users",
+  "core_personas": [
+    "marty-cagan",
+    "don-norman",
+    "steve-jobs"
+  ],
+  "review_focus": "ontology-backed board review"
+}

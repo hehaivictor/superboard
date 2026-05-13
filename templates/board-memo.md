@@ -45,6 +45,14 @@ flowchart LR
 
 > 正文只引用证据编号，来源摘录集中放在附录 A。
 
+### 本体触发与规则链
+
+| 委员会 | 本体人物 | 触发规则 | 触发材料 | 证据缺口 | 反证实验 |
+|---|---|---|---|---|---|
+| {{ontology_committee_1}} | {{ontology_persona_1}} | {{ontology_rule_1}} | {{ontology_trigger_1}} | {{ontology_missing_evidence_1}} | {{ontology_counter_test_1}} |
+| {{ontology_committee_2}} | {{ontology_persona_2}} | {{ontology_rule_2}} | {{ontology_trigger_2}} | {{ontology_missing_evidence_2}} | {{ontology_counter_test_2}} |
+| {{ontology_committee_3}} | {{ontology_persona_3}} | {{ontology_rule_3}} | {{ontology_trigger_3}} | {{ontology_missing_evidence_3}} | {{ontology_counter_test_3}} |
+
 ## 5. 五个委员会意见
 
 ### 商业委员会
@@ -140,6 +148,13 @@ flowchart LR
 ## 附录 C：Persona 关键意见摘要
 
 {{persona_appendix}}
+
+### 本体边界说明
+
+- 核心董事：{{core_ontology_personas}}
+- 按需触发专家：{{triggered_specialists}}
+- 归档蒸馏档案：{{distilled_archive_personas}}
+- 本体未覆盖或证据不足的判断：{{ontology_gaps}}
 
 ## 附录 D：决策记录
 
