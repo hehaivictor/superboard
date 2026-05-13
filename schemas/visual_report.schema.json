@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://super-board.local/schemas/visual_report.schema.json",
+  "title": "Super Board Visual Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "hero",
+    "decision_cards",
+    "committee_cards",
+    "ontology_cards",
+    "evidence_cards",
+    "assumption_cards",
+    "insight_cards",
+    "roadmap",
+    "appendix_sections"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string"
+    },
+    "hero": {
+      "type": "object",
+      "required": [
+        "title",
+        "decision_id",
+        "mode_id",
+        "mode_label",
+        "decision",
+        "decision_label",
+        "confidence_label",
+        "source_block_count",
+        "material_file_count"
+      ],
+      "properties": {
+        "title": { "type": "string" },
+        "decision_id": { "type": "string" },
+        "mode_id": { "type": "string" },
+        "mode_label": { "type": "string" },
+        "decision": { "type": "string" },
+        "decision_label": { "type": "string" },
+        "confidence_label": { "type": "string" },
+        "source_block_count": { "type": "integer", "minimum": 0 },
+        "material_file_count": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": true
+    },
+    "decision_cards": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/card" }
+    },
+    "committee_cards": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/card" }
+    },
+    "ontology_cards": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/card" }
+    },
+    "evidence_cards": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/card" }
+    },
+    "assumption_cards": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/card" }
+    },
+    "insight_cards": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/card" }
+    },
+    "roadmap": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["day", "title", "body"],
+        "properties": {
+          "day": { "type": "integer" },
+          "title": { "type": "string" },
+          "body": { "type": "string" },
+          "evidence": { "type": "string" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "appendix_sections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["title", "body"],
+        "properties": {
+          "title": { "type": "string" },
+          "body": { "type": "string" },
+          "source_fields": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "$defs": {
+    "card": {
+      "type": "object",
+      "required": ["card_id", "title", "body", "tone", "source_fields"],
+      "properties": {
+        "card_id": { "type": "string" },
+        "title": { "type": "string" },
+        "body": { "type": "string" },
+        "tone": { "type": "string" },
+        "value": { "type": "string" },
+        "meta": { "type": "string" },
+        "badges": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "source_fields": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}

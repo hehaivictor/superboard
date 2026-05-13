@@ -347,6 +347,17 @@ class ValidateSkillTests(unittest.TestCase):
         self.assertIn("committee_rule_matrix", payload)
         self.assertGreaterEqual(len(payload["ontology_rule_hits"]), 1)
 
+    def test_preview_payload_exposes_visual_report(self) -> None:
+        payload = super_board_server.build_preview_payload(
+            "# 定价策略\n\n目标：验证企业版定价、竞品价格、客户支付意愿、毛利、获客成本和销售激励。",
+            "deep_board_review",
+            None,
+        )
+
+        self.assertIn("visual_report", payload)
+        self.assertIn("visual_report_markdown", payload)
+        self.assertIn("视觉版董事会建议书", payload["visual_report_markdown"])
+
     def test_streaming_completion_reports_length_finish_reason(self) -> None:
         response = FakeStreamingResponse(
             [

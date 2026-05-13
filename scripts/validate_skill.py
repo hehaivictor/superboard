@@ -30,6 +30,7 @@ REQUIRED_FILES = [
     "templates/follow-up-review.md",
     "templates/user-panel-summary.md",
     "templates/persona-dossier.md",
+    "templates/visual-board-report.md",
     "docs/source-policy.md",
     "schemas/board_mode.schema.json",
     "schemas/decision_record.schema.json",
@@ -38,6 +39,7 @@ REQUIRED_FILES = [
     "schemas/review_run.schema.json",
     "schemas/calibration_event.schema.json",
     "schemas/action_item.schema.json",
+    "schemas/visual_report.schema.json",
     "ontology/schemas/persona_ontology.schema.json",
     "ontology/schemas/committee_ontology.schema.json",
     "ontology/schemas/ontology_trace.schema.json",
@@ -47,6 +49,7 @@ REQUIRED_FILES = [
     "scripts/ontology_matcher.py",
     "scripts/validate_skill.py",
     "scripts/audit_board_memo.py",
+    "scripts/visual_report_builder.py",
     "PLANS.md",
     ".harness/current_sprint.md",
     ".harness/harness_check.py",
@@ -56,9 +59,11 @@ REQUIRED_FILES = [
     ".harness/tasks/board_memo_quality.yaml",
     ".harness/tasks/web_ontology_smoke.yaml",
     ".harness/tasks/record_followup_calibration.yaml",
+    ".harness/tasks/visual_report_smoke.yaml",
     "examples/ontology-evaluation-report.md",
     "tests/test_validate_skill.py",
     "tests/test_validate_ontology.py",
+    "tests/test_visual_report_builder.py",
 ]
 
 REQUIRED_PERSONA_FIELDS = [
@@ -130,6 +135,7 @@ REQUIRED_SCHEMA_FILES = [
     "schemas/review_run.schema.json",
     "schemas/calibration_event.schema.json",
     "schemas/action_item.schema.json",
+    "schemas/visual_report.schema.json",
 ]
 
 REQUIRED_MERMAID_BLOCKS = 3

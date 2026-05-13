@@ -1,0 +1,7 @@
+id: visual_report_smoke
+name: 视觉版董事会建议书
+command: python3 -m unittest tests/test_visual_report_builder.py
+success_criteria:
+  - preview payload 包含 visual_report 和 visual_report_markdown
+  - AI 洞察声明来源字段，不新增不可追踪事实
+  - 本体、证据、假设和路线图都能被卡片化展示

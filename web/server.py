@@ -74,6 +74,7 @@ DECISION_LABELS = {
 
 sys.path.insert(0, str(ROOT / "scripts"))
 import board_memo_structure as memo_structure  # noqa: E402
+import visual_report_builder  # noqa: E402
 from super_board_run import build_board_memo, build_material_pack_from_text, build_prompt_bundle, build_record, load_modes  # noqa: E402
 
 BOARD_MEMO_REQUIRED_SECTION_GROUPS = memo_structure.BOARD_MEMO_REQUIRED_SECTION_GROUPS
@@ -435,10 +436,15 @@ def build_preview_payload(material: str, mode_id: str, material_pack: object) ->
     )
     prompt_bundle = build_prompt_bundle(input_path, material, modes[mode_id], record)
     board_memo = build_board_memo(input_path, material, modes[mode_id], record)
+    visual_report = visual_report_builder.build_visual_report(record, board_memo)
+    visual_report_markdown = visual_report_builder.render_visual_report_markdown(visual_report)
     record["board_memo"] = board_memo
+    record["visual_report"] = visual_report
     return {
         "record": record,
         "board_memo": board_memo,
+        "visual_report": visual_report,
+        "visual_report_markdown": visual_report_markdown,
         "prompt_bundle": prompt_bundle,
         "evidence_packets": record["evidence_packets"],
         "assumptions": record["assumptions"],
@@ -470,7 +476,12 @@ def attach_model_memo(payload: dict[str, object], board_memo: str, config: dict[
         "max_tokens": config.get("max_tokens"),
         "continuations": config.get("continuations"),
     }
+    visual_report = visual_report_builder.build_visual_report(record, board_memo)
+    visual_report_markdown = visual_report_builder.render_visual_report_markdown(visual_report)
+    record["visual_report"] = visual_report
     payload["board_memo"] = board_memo
+    payload["visual_report"] = visual_report
+    payload["visual_report_markdown"] = visual_report_markdown
     payload["generated_by"] = "model"
     payload["generation"] = record["generation"]
     return payload
@@ -747,6 +758,23 @@ class Handler(BaseHTTPRequestHandler):
             except ValueError as exc:
                 json_response(self, {"error": str(exc)}, HTTPStatus.BAD_REQUEST)
                 return
+            return
+        if parsed.path == "/api/visual-report":
+            payload = read_json(self)
+            record = payload.get("record", {})
+            if not isinstance(record, dict):
+                json_response(self, {"error": "record must be an object"}, HTTPStatus.BAD_REQUEST)
+                return
+            board_memo = str(payload.get("board_memo") or record.get("board_memo") or "")
+            report = visual_report_builder.build_visual_report(record, board_memo)
+            json_response(
+                self,
+                {
+                    "visual_report": report,
+                    "visual_report_markdown": visual_report_builder.render_visual_report_markdown(report),
+                    "visual_report_html": visual_report_builder.render_visual_report_html(report),
+                },
+            )
             return
         if parsed.path == "/api/generate":
             payload = read_json(self)

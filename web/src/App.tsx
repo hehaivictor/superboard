@@ -1,5 +1,5 @@
 import { ChangeEvent, DragEvent, useEffect, useMemo, useState } from "react";
-import { Download, FileText, Layers, RefreshCw, Save, ShieldCheck, Upload } from "lucide-react";
+import { Download, FileText, Layers, RefreshCw, Save, ShieldCheck, Sparkles, Upload } from "lucide-react";
 
 type Mode = {
   mode_id: string;
@@ -33,6 +33,8 @@ type LlmConfig = {
 type Preview = {
   record: Record<string, unknown>;
   board_memo: string;
+  visual_report?: VisualReport;
+  visual_report_markdown?: string;
   prompt_bundle: string;
   evidence_packets: Array<Record<string, string>>;
   assumptions: Array<Record<string, unknown>>;
@@ -43,6 +45,55 @@ type Preview = {
   review_run?: ReviewRun;
   action_items?: Array<Record<string, unknown>>;
   calibration_events?: Array<Record<string, unknown>>;
+};
+
+type VisualHero = {
+  title: string;
+  decision_id: string;
+  mode_id: string;
+  mode_label: string;
+  decision: string;
+  decision_label: string;
+  confidence_label: string;
+  source_block_count: number;
+  material_file_count: number;
+};
+
+type VisualCard = {
+  card_id: string;
+  title: string;
+  body: string;
+  tone: string;
+  value?: string;
+  meta?: string;
+  badges?: string[];
+  source_fields: string[];
+};
+
+type VisualRoadmapItem = {
+  day: number;
+  title: string;
+  body: string;
+  evidence?: string;
+};
+
+type VisualAppendixSection = {
+  title: string;
+  body: string;
+  source_fields?: string[];
+};
+
+type VisualReport = {
+  schema_version: string;
+  hero: VisualHero;
+  decision_cards: VisualCard[];
+  committee_cards: VisualCard[];
+  ontology_cards: VisualCard[];
+  evidence_cards: VisualCard[];
+  assumption_cards: VisualCard[];
+  insight_cards: VisualCard[];
+  roadmap: VisualRoadmapItem[];
+  appendix_sections: VisualAppendixSection[];
 };
 
 type OntologyTraceHit = {
@@ -350,6 +401,23 @@ function boardMemoFilename(preview: Preview) {
   return `${safeDownloadBaseName(sourceName)}-SuperBoard董事会建议书.md`;
 }
 
+function visualReportFilename(preview: Preview, extension = "md") {
+  const files = preview.material_pack?.files ?? [];
+  const sourceName = files.length === 1
+    ? files[0]?.name
+    : preview.material_pack?.title ?? preview.record.title;
+  return `${safeDownloadBaseName(sourceName)}-SuperBoard视觉版建议书.${extension}`;
+}
+
+function renderVisualReportHtml(preview: Preview) {
+  const markdown = preview.visual_report_markdown ?? "";
+  const escaped = markdown
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+  return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>${preview.visual_report?.hero.title ?? "视觉版董事会建议书"}</title><style>body{margin:0;background:#f8fafc;color:#0f172a;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}main{max-width:1120px;margin:32px auto;background:white;border:1px solid #e2e8f0;border-radius:16px;padding:32px}pre{white-space:pre-wrap;line-height:1.7;font-size:14px}</style></head><body><main><pre>${escaped}</pre></main></body></html>`;
+}
+
 function renderRecordMarkdown(record: Record<string, unknown>) {
   return [
     `# 决策记录：${record.title ?? ""}`,
@@ -419,6 +487,141 @@ function sleep(ms: number) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
+const toneClasses: Record<string, string> = {
+  slate: "border-slate-200 bg-slate-50 text-slate-900",
+  blue: "border-blue-200 bg-blue-50 text-blue-950",
+  cyan: "border-cyan-200 bg-cyan-50 text-cyan-950",
+  emerald: "border-emerald-200 bg-emerald-50 text-emerald-950",
+  amber: "border-amber-200 bg-amber-50 text-amber-950",
+  rose: "border-rose-200 bg-rose-50 text-rose-950",
+  violet: "border-violet-200 bg-violet-50 text-violet-950"
+};
+
+const dotClasses: Record<string, string> = {
+  slate: "bg-slate-500",
+  blue: "bg-blue-500",
+  cyan: "bg-cyan-500",
+  emerald: "bg-emerald-500",
+  amber: "bg-amber-500",
+  rose: "bg-rose-500",
+  violet: "bg-violet-500"
+};
+
+function VisualCardView({ card }: { card: VisualCard }) {
+  const tone = toneClasses[card.tone] ?? toneClasses.slate;
+  const dot = dotClasses[card.tone] ?? dotClasses.slate;
+  return (
+    <article className={`rounded-lg border p-4 ${tone}`}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <span className={`h-2 w-2 rounded-full ${dot}`} />
+            <h4 className="break-words text-sm font-semibold">{card.title}</h4>
+          </div>
+          {card.meta && <div className="mt-1 text-xs opacity-70">{card.meta}</div>}
+        </div>
+        {card.value && (
+          <span className="shrink-0 rounded-md bg-white/70 px-2 py-1 text-xs font-medium shadow-sm">{card.value}</span>
+        )}
+      </div>
+      <p className="mt-3 text-sm leading-6">{card.body}</p>
+      {(card.badges?.length ?? 0) > 0 && (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {card.badges?.map((badge) => (
+            <span key={badge} className="rounded-md bg-white/70 px-2 py-1 text-xs">{badge}</span>
+          ))}
+        </div>
+      )}
+      <div className="mt-3 text-[11px] leading-5 opacity-70">来源：{card.source_fields.join("、")}</div>
+    </article>
+  );
+}
+
+function VisualSection({ title, cards, columns = "grid-cols-1 md:grid-cols-2" }: { title: string; cards: VisualCard[]; columns?: string }) {
+  return (
+    <section className="space-y-3">
+      <h3 className="text-sm font-semibold text-slate-950">{title}</h3>
+      {cards.length === 0 ? (
+        <div className="rounded-md border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">暂无内容</div>
+      ) : (
+        <div className={`grid gap-3 ${columns}`}>
+          {cards.map((card) => <VisualCardView key={card.card_id} card={card} />)}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function VisualReportView({ report }: { report?: VisualReport }) {
+  if (!report) {
+    return (
+      <div className="flex h-[690px] items-start gap-3 p-4 text-sm leading-6 text-slate-600">
+        <Sparkles size={18} className="mt-1 text-slate-400" />
+        <div>
+          <div className="font-medium text-slate-900">暂无视觉版建议书</div>
+          <div className="mt-1">生成董事会建议书后，这里会把决策摘要、委员会、本体规则、证据、假设和 AI 洞察转换为卡片化报告。</div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-[690px] overflow-auto p-4">
+      <div className="space-y-5">
+        <section className="rounded-lg border border-slate-200 bg-slate-950 p-5 text-white">
+          <div className="text-xs text-slate-300">{report.hero.mode_label} · {report.hero.decision_id}</div>
+          <h3 className="mt-2 text-xl font-semibold leading-7">{report.hero.title}</h3>
+          <div className="mt-4 grid grid-cols-1 gap-2 text-xs sm:grid-cols-3">
+            <div className="rounded-md bg-white/10 p-3">
+              <div className="text-slate-300">当前建议</div>
+              <div className="mt-1 text-base font-semibold">{report.hero.decision_label}</div>
+            </div>
+            <div className="rounded-md bg-white/10 p-3">
+              <div className="text-slate-300">材料文件</div>
+              <div className="mt-1 text-base font-semibold">{report.hero.material_file_count}</div>
+            </div>
+            <div className="rounded-md bg-white/10 p-3">
+              <div className="text-slate-300">来源块</div>
+              <div className="mt-1 text-base font-semibold">{report.hero.source_block_count}</div>
+            </div>
+          </div>
+        </section>
+
+        <VisualSection title="决策摘要卡片" cards={report.decision_cards} />
+        <VisualSection title="AI 洞察" cards={report.insight_cards} />
+        <VisualSection title="委员会卡片" cards={report.committee_cards} />
+        <VisualSection title="本体规则卡片" cards={report.ontology_cards.slice(0, 6)} />
+        <VisualSection title="证据与假设" cards={[...report.evidence_cards.slice(0, 3), ...report.assumption_cards.slice(0, 3)]} />
+
+        <section className="space-y-3">
+          <h3 className="text-sm font-semibold text-slate-950">30 / 60 / 90 天路线图</h3>
+          <div className="grid gap-3 md:grid-cols-3">
+            {report.roadmap.map((item) => (
+              <div key={item.day} className="rounded-lg border border-slate-200 bg-white p-4">
+                <div className="text-lg font-semibold text-slate-950">{item.day} 天</div>
+                <div className="mt-2 text-sm leading-6 text-slate-700">{item.body}</div>
+                <div className="mt-3 text-xs text-slate-500">{item.evidence}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="space-y-3">
+          <h3 className="text-sm font-semibold text-slate-950">结构化正文摘要</h3>
+          <div className="space-y-2">
+            {report.appendix_sections.slice(0, 2).map((section) => (
+              <div key={section.title} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                <div className="text-sm font-semibold text-slate-900">{section.title}</div>
+                <div className="mt-2 text-sm leading-6 text-slate-600">{section.body}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}
+
 export function App() {
   const [config, setConfig] = useState<Config>(fallbackConfig);
   const [modeId, setModeId] = useState("deep_board_review");
@@ -433,6 +636,7 @@ export function App() {
   const [showCommittees, setShowCommittees] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [isMaterialDragging, setIsMaterialDragging] = useState(false);
+  const [activeMemoView, setActiveMemoView] = useState<"visual" | "memo">("visual");
 
   useEffect(() => {
     fetch("/api/config")
@@ -484,6 +688,7 @@ export function App() {
         return;
       }
       setPreview(payload);
+      setActiveMemoView("visual");
       setStatus(`模型建议书已生成：${payload.generation?.model ?? llm.model}`);
       setGenerationError(null);
     } catch (error) {
@@ -532,6 +737,7 @@ export function App() {
       }
       if (payload.status === "succeeded" && payload.result) {
         setPreview(payload.result as Preview);
+        setActiveMemoView("visual");
         setStatus(`模型建议书已生成：${llm.model}`);
         setGenerationError(null);
         return;
@@ -654,6 +860,15 @@ export function App() {
     downloadText(boardMemoFilename(preview), preview.board_memo);
   }
 
+  function exportVisualReport(format: "md" | "html") {
+    if (!preview) return;
+    if (format === "html") {
+      downloadText(visualReportFilename(preview, "html"), renderVisualReportHtml(preview));
+      return;
+    }
+    downloadText(visualReportFilename(preview), preview.visual_report_markdown ?? "");
+  }
+
   return (
     <main className="min-h-screen bg-[#f8fafc] text-slate-950">
       <header className="border-b border-slate-200 bg-white">
@@ -763,12 +978,48 @@ export function App() {
         </form>
 
         <section className="rounded-lg border border-slate-200 bg-white">
-          <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-            <div className="flex items-center gap-2">
-              <FileText size={18} />
-              <h2 className="text-base font-semibold">董事会建议书</h2>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-2">
+                <FileText size={18} />
+                <h2 className="text-base font-semibold">董事会建议书</h2>
+              </div>
+              <div className="inline-flex rounded-md border border-slate-200 bg-slate-50 p-1 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setActiveMemoView("visual")}
+                  className={`rounded px-3 py-1.5 ${activeMemoView === "visual" ? "bg-slate-950 text-white" : "text-slate-600"}`}
+                >
+                  视觉版
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveMemoView("memo")}
+                  className={`rounded px-3 py-1.5 ${activeMemoView === "memo" ? "bg-slate-950 text-white" : "text-slate-600"}`}
+                >
+                  正文版
+                </button>
+              </div>
             </div>
             <div className="flex items-center gap-2">
+              <button
+                type="button"
+                disabled={!preview}
+                onClick={() => exportVisualReport("md")}
+                className="inline-flex items-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-700 disabled:opacity-40"
+              >
+                <Download size={15} />
+                导出视觉报告
+              </button>
+              <button
+                type="button"
+                disabled={!preview}
+                onClick={() => exportVisualReport("html")}
+                className="inline-flex items-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-700 disabled:opacity-40"
+              >
+                <Download size={15} />
+                导出 HTML
+              </button>
               <button
                 type="button"
                 disabled={!preview}
@@ -796,9 +1047,13 @@ export function App() {
               </div>
             </div>
           ) : (
-            <pre className="h-[690px] overflow-auto whitespace-pre-wrap p-4 text-sm leading-6 text-slate-700">
-              {preview?.board_memo ?? "上传或输入材料后，点击“生成董事会建议书”。"}
-            </pre>
+            activeMemoView === "visual" ? (
+              <VisualReportView report={preview?.visual_report} />
+            ) : (
+              <pre className="h-[690px] overflow-auto whitespace-pre-wrap p-4 text-sm leading-6 text-slate-700">
+                {preview?.board_memo ?? "上传或输入材料后，点击“生成董事会建议书”。"}
+              </pre>
+            )
           )}
         </section>
 

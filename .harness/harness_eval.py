@@ -12,9 +12,13 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def main() -> int:
-    result = subprocess.run([sys.executable, "scripts/evaluate_ontology_quality.py"], cwd=ROOT, text=True, check=False)
-    if result.returncode != 0:
-        return result.returncode
+    for command in [
+        [sys.executable, "scripts/evaluate_ontology_quality.py"],
+        [sys.executable, "-m", "unittest", "tests/test_visual_report_builder.py"],
+    ]:
+        result = subprocess.run(command, cwd=ROOT, text=True, check=False)
+        if result.returncode != 0:
+            return result.returncode
     print("Harness eval passed.")
     return 0
 

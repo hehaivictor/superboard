@@ -15,6 +15,7 @@ REQUIRED_TASKS = [
     "board_memo_quality.yaml",
     "web_ontology_smoke.yaml",
     "record_followup_calibration.yaml",
+    "visual_report_smoke.yaml",
 ]
 
 
@@ -38,6 +39,7 @@ def main() -> int:
     for command in [
         [sys.executable, "scripts/validate_skill.py"],
         [sys.executable, "scripts/validate_ontology.py"],
+        [sys.executable, "-m", "unittest", "tests/test_visual_report_builder.py"],
     ]:
         code = run(command)
         if code != 0:
