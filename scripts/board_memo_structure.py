@@ -37,6 +37,14 @@ class MemoHeading:
     canonical: str
 
 
+@dataclass(frozen=True)
+class MemoSectionBlock:
+    heading: str | None
+    canonical: str | None
+    block: str
+    body: str
+
+
 def strip_heading_numbering(heading: str) -> str:
     text = heading.strip()
     text = re.sub(r"^\s*第[一二三四五六七八九十百千万零〇两]+[章节部分]?[、.．:：\s-]*", "", text)
@@ -134,7 +142,45 @@ def audit_text(markdown: str) -> list[dict[str, object]]:
                     "message": f"章节重复出现 {count} 次：{canonical}",
                 }
             )
+    for issue in required_content_issues(markdown):
+        issues.append({"code": "missing_required_content", "message": issue})
     return issues
+
+
+def split_main_section_blocks(text: str) -> list[MemoSectionBlock]:
+    """Split only top-level Super Board sections, keeping nested headings inside the parent section."""
+    in_fence = False
+    matches: list[tuple[int, int, str, str]] = []
+    for line in re.finditer(r"^.*$", text, flags=re.MULTILINE):
+        stripped = line.group(0).strip()
+        if stripped.startswith("```"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        match = re.match(r"^(#{1,6})\s+(.+?)\s*$", line.group(0))
+        if not match:
+            continue
+        level = len(match.group(1))
+        raw_heading = match.group(2).strip()
+        canonical = normalize_heading(raw_heading)
+        if canonical in BOARD_MEMO_CANONICAL_SECTIONS and level <= 2:
+            matches.append((line.start(), line.end(), raw_heading, canonical))
+
+    if not matches:
+        stripped = text.strip()
+        return [MemoSectionBlock(None, None, stripped, stripped)] if stripped else []
+
+    blocks: list[MemoSectionBlock] = []
+    intro = text[: matches[0][0]].strip()
+    if intro:
+        blocks.append(MemoSectionBlock(None, None, intro, intro))
+    for index, (start, heading_end, heading, canonical) in enumerate(matches):
+        end = matches[index + 1][0] if index + 1 < len(matches) else len(text)
+        block = text[start:end].strip()
+        body = text[heading_end:end].strip()
+        blocks.append(MemoSectionBlock(heading, canonical, block, body))
+    return blocks
 
 
 def split_markdown_blocks(text: str) -> list[tuple[str | None, str | None, str]]:
@@ -164,19 +210,98 @@ def split_markdown_blocks(text: str) -> list[tuple[str | None, str | None, str]]
     return blocks
 
 
+def meaningful_text(text: str) -> str:
+    cleaned = re.sub(r"```[a-zA-Z0-9_-]*\n([\s\S]*?)```", r"\1", text)
+    cleaned = re.sub(r"^#{1,6}\s+.*$", " ", cleaned, flags=re.MULTILINE)
+    cleaned = re.sub(r"<!--[\s\S]*?-->", " ", cleaned)
+    cleaned = re.sub(r"\{\{[^}]+\}\}", " ", cleaned)
+    cleaned = re.sub(r"[*_`|>#\-\[\](){}:：,，.。;；\s]+", "", cleaned)
+    return cleaned.strip()
+
+
+def section_body_map(markdown: str) -> dict[str, str]:
+    sections: dict[str, str] = {}
+    for section in split_main_section_blocks(markdown):
+        if section.canonical is None:
+            continue
+        if section.canonical not in sections or section_quality_score(section.canonical, section.body) > section_quality_score(section.canonical, sections[section.canonical]):
+            sections[section.canonical] = section.body
+    return sections
+
+
+def has_any_marker(text: str, markers: list[str]) -> bool:
+    return any(marker in text for marker in markers)
+
+
+def required_content_issues(markdown: str) -> list[str]:
+    issues: list[str] = []
+    sections = section_body_map(markdown)
+
+    for canonical in BOARD_MEMO_CANONICAL_SECTIONS:
+        if canonical == "# 《董事会建议书》":
+            continue
+        body = sections.get(canonical, "")
+        if not meaningful_text(body):
+            issues.append(f"{canonical} 缺少实质正文")
+
+    consensus = sections.get("跨委员会共识与关键分歧", "")
+    if consensus:
+        if "强共识" not in consensus:
+            issues.append("跨委员会共识与关键分歧 缺少强共识")
+        if "关键分歧" not in consensus:
+            issues.append("跨委员会共识与关键分歧 缺少关键分歧")
+
+    risk = sections.get("最大机会、最大风险与反证路径", "")
+    if risk:
+        if "最大机会" not in risk:
+            issues.append("最大机会、最大风险与反证路径 缺少最大机会")
+        if "最大风险" not in risk:
+            issues.append("最大机会、最大风险与反证路径 缺少最大风险")
+        if not has_any_marker(risk, ["最强反证", "反证路径", "反证实验", "失败路径"]):
+            issues.append("最大机会、最大风险与反证路径 缺少反证或失败路径")
+
+    roadmap = sections.get("30 / 60 / 90 天行动计划", "")
+    if roadmap and not all(marker in roadmap for marker in ["30", "60", "90"]):
+        issues.append("30 / 60 / 90 天行动计划 缺少 30 / 60 / 90 检查点")
+
+    return issues
+
+
+def section_quality_score(canonical: str | None, body: str) -> int:
+    if canonical is None:
+        return len(meaningful_text(body))
+    score = min(len(meaningful_text(body)), 1000)
+    if canonical == "跨委员会共识与关键分歧":
+        score += 200 if "强共识" in body else 0
+        score += 200 if "关键分歧" in body else 0
+    if canonical == "最大机会、最大风险与反证路径":
+        score += 200 if "最大机会" in body else 0
+        score += 200 if "最大风险" in body else 0
+        score += 200 if has_any_marker(body, ["最强反证", "反证路径", "反证实验", "失败路径"]) else 0
+    if canonical == "30 / 60 / 90 天行动计划":
+        score += 120 if "30" in body else 0
+        score += 120 if "60" in body else 0
+        score += 120 if "90" in body else 0
+    return score
+
+
 def merge_model_parts(parts: list[str]) -> str:
-    merged_blocks: list[str] = []
-    seen_sections: set[str] = set()
+    merged_blocks: list[MemoSectionBlock] = []
+    section_indexes: dict[str, int] = {}
     for part_index, part in enumerate(parts):
-        for _heading, canonical, block in split_markdown_blocks(part):
-            if not block:
+        for section in split_main_section_blocks(part):
+            if not section.block:
                 continue
-            if canonical is None:
+            if section.canonical is None:
                 if part_index == 0:
-                    merged_blocks.append(block)
+                    merged_blocks.append(section)
                 continue
-            if canonical in seen_sections:
+            if section.canonical in section_indexes:
+                existing_index = section_indexes[section.canonical]
+                existing = merged_blocks[existing_index]
+                if section_quality_score(section.canonical, section.body) > section_quality_score(existing.canonical, existing.body):
+                    merged_blocks[existing_index] = section
                 continue
-            merged_blocks.append(block)
-            seen_sections.add(canonical)
-    return "\n\n".join(merged_blocks).strip()
+            section_indexes[section.canonical] = len(merged_blocks)
+            merged_blocks.append(section)
+    return "\n\n".join(section.block for section in merged_blocks).strip()

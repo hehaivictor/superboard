@@ -223,10 +223,18 @@ def board_memo_has_duplicate_restart(board_memo: str) -> bool:
     return memo_structure.has_duplicate_restart(board_memo)
 
 
+def board_memo_quality_issues(board_memo: str) -> list[str]:
+    return memo_structure.required_content_issues(board_memo)
+
+
 def board_memo_is_complete(board_memo: str) -> bool:
     if not board_memo.strip():
         return False
-    return not board_memo_missing_markers(board_memo) and not board_memo_has_duplicate_restart(board_memo)
+    return (
+        not board_memo_missing_markers(board_memo)
+        and not board_memo_has_duplicate_restart(board_memo)
+        and not board_memo_quality_issues(board_memo)
+    )
 
 
 def split_markdown_h2_blocks(text: str) -> list[tuple[str | None, str | None, str]]:
@@ -237,17 +245,20 @@ def merge_model_parts(parts: list[str]) -> str:
     return memo_structure.merge_model_parts(parts)
 
 
-def continuation_prompt(missing_markers: list[str], finish_reason: str) -> str:
+def continuation_prompt(missing_markers: list[str], finish_reason: str, quality_issues: list[str] | None = None) -> str:
     missing = "\n".join(f"- {marker}" for marker in missing_markers) or "- 未检测到缺失章节，但上一段达到长度上限。"
+    quality = "\n".join(f"- {issue}" for issue in quality_issues or []) or "- 未检测到内容质量问题。"
     return (
         "上一段《董事会建议书》输出未完整结束。"
         f"finish_reason={finish_reason or 'unknown'}。\n\n"
-        "只输出缺失章节，不要从头重写报告，不要重复已经存在的章节。"
-        "禁止再次输出“输入材料与审议范围”“一页结论”“核心判断依据”“证据包”“待验证假设”等已存在章节，除非它们列在缺失章节中。"
+        "只输出缺失或内容不完整的章节，不要从头重写报告，不要重复已经完整的章节。"
+        "如果某个章节标题已经出现但正文为空、只剩子标题、缺少强共识/关键分歧/最大机会/最大风险/反证路径，请输出该章节的完整替换版。"
+        "禁止再次输出“输入材料与审议范围”“一页结论”“核心判断依据”“证据包”“待验证假设”等已完整章节，除非它们列在缺失或不完整清单中。"
         "续写时不要输出新的一级标题；只能使用 templates/board-memo.md 里的二级章节标题。"
         "正文只引用证据编号，来源摘录只放在附录 A。"
         "从当前最后一个章节之后继续，保持中文、证据约束和 Mermaid 代码块格式。\n\n"
-        f"当前仍缺少的关键章节：\n{missing}"
+        f"当前仍缺少的关键章节：\n{missing}\n\n"
+        f"当前内容不完整的问题：\n{quality}"
     )
 
 
@@ -345,8 +356,9 @@ def call_model(prompt_bundle: str, config: dict[str, object]) -> str:
         finish_reasons.append(finish_reason or "")
         board_memo = merge_model_parts(parts)
         missing_markers = board_memo_missing_markers(board_memo)
+        quality_issues = board_memo_quality_issues(board_memo)
 
-        if board_memo and finish_reason != "length" and not missing_markers and not board_memo_has_duplicate_restart(board_memo):
+        if board_memo and finish_reason != "length" and not missing_markers and not board_memo_has_duplicate_restart(board_memo) and not quality_issues:
             return board_memo
 
         if attempt >= max_continuations:
@@ -354,17 +366,19 @@ def call_model(prompt_bundle: str, config: dict[str, object]) -> str:
                 raise RuntimeError("模型响应中没有可用正文。")
             missing_text = "、".join(missing_markers) if missing_markers else "无"
             duplicate_text = "；检测到报告重复重启" if board_memo_has_duplicate_restart(board_memo) else ""
+            quality_text = "、".join(quality_issues) if quality_issues else "无"
             raise RuntimeError(
                 "模型输出疑似截断或未按董事会模板补齐，已停止展示半截报告。"
                 f"finish_reason 序列：{', '.join(reason or 'unknown' for reason in finish_reasons)}；"
                 f"缺失章节：{missing_text}{duplicate_text}；"
+                f"内容问题：{quality_text}；"
                 f"已生成字符数：{len(board_memo)}。"
                 "请提高 SUPER_BOARD_LLM_MAX_TOKENS / continuations，或缩短输入材料后重试。"
             )
 
         context_tail = text or board_memo[-12000:]
         messages.append({"role": "assistant", "content": context_tail[-12000:]})
-        messages.append({"role": "user", "content": continuation_prompt(missing_markers, finish_reason)})
+        messages.append({"role": "user", "content": continuation_prompt(missing_markers, finish_reason, quality_issues)})
 
     raise RuntimeError("模型生成未能完成。")
 
@@ -473,6 +487,7 @@ def attach_model_memo(payload: dict[str, object], board_memo: str, config: dict[
         "prompt_hash": hashlib.sha256(prompt_bundle.encode("utf-8")).hexdigest()[:16],
         "output_chars": len(board_memo),
         "missing_required_sections": board_memo_missing_markers(board_memo),
+        "quality_issues": board_memo_quality_issues(board_memo),
         "max_tokens": config.get("max_tokens"),
         "continuations": config.get("continuations"),
     }

@@ -377,47 +377,123 @@ class ValidateSkillTests(unittest.TestCase):
         incomplete = "# 《董事会建议书》\n\n## 输入类型与审议范围\n\n只有报告开头。"
         complete = "\n\n".join(
             [
-                "# 《董事会建议书》",
-                "## 输入类型与审议范围",
-                "## 一句话结论",
-                "## Go / No-Go / Pivot 建议",
-                "## 核心判断",
-                "## 证据包",
-                "## 假设账本",
-                "## 各委员会结论",
-                "## 跨委员会共识",
-                "## 关键分歧",
-                "## 最大机会",
-                "## 最大风险",
-                "## 建议行动清单",
-                "## 需要补充验证的问题",
-                "## 决策记录条目",
-                "## 附录：各 Persona 关键意见摘要",
+                "# 《董事会建议书》：完整报告",
+                "## 一页结论\n\n- 当前建议：推进。",
+                "## 输入材料与审议范围\n\n材料已拆解为来源块。",
+                "## Go / No-Go / Pivot 建议\n\n- 推进：证据充分。",
+                "## 核心判断依据\n\n- 判断：证据链完整。",
+                "## 五个委员会意见\n\n- 商业委员会：支持。\n- 创业委员会：支持。\n- 投资委员会：支持。\n- 咨询委员会：支持。\n- 产品委员会：支持。",
+                "## 跨委员会共识与关键分歧\n\n**强共识**\n\n- 共识：先验证付费意愿。\n\n**关键分歧**\n\n- 分歧：进入节奏。",
+                "## 最大机会、最大风险与反证路径\n\n- 最大机会：获得高价值客户。\n- 最大风险：付费意愿不足。\n- 最强反证：客户拒绝为诊断付费。\n- 失败路径 1：需求不存在。",
+                "## 30 / 60 / 90 天行动计划\n\n- 30 天：验证。\n- 60 天：复盘。\n- 90 天：决策。",
+                "## 附录 A：证据包\n\n- E1：来源块。",
+                "## 附录 B：待验证假设\n\n- H1：客户愿意付费。",
+                "## 附录 C：Persona 关键意见摘要\n\n- Persona：观点。",
+                "## 附录 D：决策记录\n\n- 决策编号：SB-test。",
             ]
         )
 
         self.assertFalse(super_board_server.board_memo_is_complete(incomplete))
         self.assertTrue(super_board_server.board_memo_is_complete(complete))
 
+    def test_board_memo_with_empty_core_sections_is_not_complete(self) -> None:
+        content_missing = "\n\n".join(
+            [
+                "# 《董事会建议书》：缺内容报告",
+                "## 一页结论\n\n- 当前建议：推进。",
+                "## 输入材料与审议范围\n\n材料已拆解。",
+                "## Go / No-Go / Pivot 建议\n\n- 推进：满足条件。",
+                "## 核心判断依据\n\n- 判断：需要证据。",
+                "## 五个委员会意见\n\n- 商业委员会：支持。",
+                "## 跨委员会共识与关键分歧",
+                "## 最大机会、最大风险与反证路径\n\n### 3. 反证路径\n\n- 只输出了反证路径。",
+                "## 30 / 60 / 90 天行动计划\n\n- 30 天：验证。\n- 60 天：复盘。\n- 90 天：决策。",
+                "## 附录 A：证据包\n\n- E1：来源块。",
+                "## 附录 B：待验证假设\n\n- H1：客户愿意付费。",
+                "## 附录 C：Persona 关键意见摘要\n\n- Persona：观点。",
+                "## 附录 D：决策记录\n\n- 决策编号：SB-test。",
+            ]
+        )
+
+        self.assertEqual([], super_board_server.board_memo_missing_markers(content_missing))
+        self.assertFalse(super_board_server.board_memo_is_complete(content_missing))
+        issues = super_board_server.board_memo_quality_issues(content_missing)
+        self.assertTrue(any("跨委员会共识与关键分歧" in issue for issue in issues))
+        self.assertTrue(any("最大机会、最大风险与反证路径" in issue for issue in issues))
+
+    def test_call_model_rejects_content_incomplete_board_memo(self) -> None:
+        content_missing = "\n\n".join(
+            [
+                "# 《董事会建议书》：缺内容报告",
+                "## 一页结论\n\n- 当前建议：推进。",
+                "## 输入材料与审议范围\n\n材料已拆解。",
+                "## Go / No-Go / Pivot 建议\n\n- 推进：满足条件。",
+                "## 核心判断依据\n\n- 判断：需要证据。",
+                "## 五个委员会意见\n\n- 商业委员会：支持。",
+                "## 跨委员会共识与关键分歧",
+                "## 最大机会、最大风险与反证路径\n\n### 3. 反证路径\n\n- 只输出了反证路径。",
+                "## 30 / 60 / 90 天行动计划\n\n- 30 天：验证。\n- 60 天：复盘。\n- 90 天：决策。",
+                "## 附录 A：证据包\n\n- E1：来源块。",
+                "## 附录 B：待验证假设\n\n- H1：客户愿意付费。",
+                "## 附录 C：Persona 关键意见摘要\n\n- Persona：观点。",
+                "## 附录 D：决策记录\n\n- 决策编号：SB-test。",
+            ]
+        )
+
+        with patch.object(super_board_server, "call_streaming_chat_completion", return_value=(content_missing, "stop")):
+            with self.assertRaises(RuntimeError) as context:
+                super_board_server.call_model(
+                    "prompt",
+                    {
+                        "model": "test-model",
+                        "base_url": "http://127.0.0.1:9999/v1",
+                        "temperature": 0,
+                        "max_tokens": 1000,
+                        "timeout": 1,
+                        "continuations": 0,
+                    },
+                )
+
+        self.assertIn("内容问题", str(context.exception))
+        self.assertIn("跨委员会共识与关键分歧", str(context.exception))
+
+    def test_merge_model_parts_replaces_empty_sections_with_completed_continuation(self) -> None:
+        first_part = "\n\n".join(
+            [
+                "# 《董事会建议书》：续写合并测试",
+                "## 跨委员会共识与关键分歧",
+                "## 最大机会、最大风险与反证路径\n\n### 3. 反证路径\n\n- 只有反证路径。",
+            ]
+        )
+        continuation = "\n\n".join(
+            [
+                "## 跨委员会共识与关键分歧\n\n**强共识**\n\n- 共识：先验证付费意愿。\n\n**关键分歧**\n\n- 分歧：是否先服务化交付。",
+                "## 最大机会、最大风险与反证路径\n\n- 最大机会：沉淀可复用方案。\n- 最大风险：客户不愿付费。\n- 最强反证：客户只愿免费咨询。\n- 失败路径 1：无法复用交付。",
+            ]
+        )
+
+        merged = super_board_server.merge_model_parts([first_part, continuation])
+
+        self.assertIn("共识：先验证付费意愿", merged)
+        self.assertIn("最大机会：沉淀可复用方案", merged)
+        self.assertNotIn("只有反证路径", merged)
+
     def test_numbered_chinese_headings_count_as_required_sections(self) -> None:
         numbered = "\n\n".join(
             [
                 "# 《董事会建议书》",
-                "## 一、输入类型与审议范围",
-                "## 二、一句话结论",
-                "## 三、Go / No-Go / Pivot 建议",
-                "## 四、核心判断",
-                "## 五、证据包",
-                "## 六、假设账本",
-                "## 七、各委员会结论",
-                "## 八、跨委员会共识",
-                "## 九、关键分歧",
-                "## 十、最大机会",
-                "## 十一、最大风险",
-                "## 十二、建议行动清单",
-                "## 十三、需要补充验证的问题",
-                "## 十四、人物附录：委员会审议角色画像",
-                "## 十五、决策记录条目",
+                "## 一、输入材料与审议范围\n\n材料范围完整。",
+                "## 二、一句话结论\n\n- 当前建议：推进。",
+                "## 三、Go / No-Go / Pivot 建议\n\n- 推进：满足证据条件。",
+                "## 四、核心判断依据\n\n- 判断：证据链可验证。",
+                "## 五、五个委员会意见\n\n- 商业委员会：支持。\n- 创业委员会：支持。\n- 投资委员会：支持。\n- 咨询委员会：支持。\n- 产品委员会：支持。",
+                "## 六、跨委员会共识与关键分歧\n\n**强共识**\n\n- 共识：优先验证客户付费。\n\n**关键分歧**\n\n- 分歧：先诊断还是先服务包。",
+                "## 七、最大机会、最大风险与反证路径\n\n- 最大机会：沉淀可复用交付。\n- 最大风险：客户不愿付费。\n- 最强反证：客户只接受免费咨询。\n- 失败路径 1：服务无法复用。",
+                "## 八、30 / 60 / 90 天行动计划\n\n- 30 天：验证。\n- 60 天：复盘。\n- 90 天：决策。",
+                "## 九、附录 A：证据包\n\n- E1：来源块。",
+                "## 十、附录 B：待验证假设\n\n- H1：客户愿意付费。",
+                "## 十一、附录 C：Persona 关键意见摘要\n\n- Persona：观点。",
+                "## 十二、附录 D：决策记录\n\n- 决策编号：SB-test。",
             ]
         )
 
@@ -545,20 +621,17 @@ class ValidateSkillTests(unittest.TestCase):
         first_part = "# 《董事会建议书》\n\n## 输入类型与审议范围\n\n开头内容。"
         second_part = "\n\n".join(
             [
-                "## 一句话结论",
-                "## Go / No-Go / Pivot 建议",
-                "## 核心判断",
-                "## 证据包",
-                "## 假设账本",
-                "## 各委员会结论",
-                "## 跨委员会共识",
-                "## 关键分歧",
-                "## 最大机会",
-                "## 最大风险",
-                "## 建议行动清单",
-                "## 需要补充验证的问题",
-                "## 附录：各 Persona 关键意见摘要",
-                "## 决策记录条目",
+                "## 一句话结论\n\n- 当前建议：推进。",
+                "## Go / No-Go / Pivot 建议\n\n- 推进：满足证据条件。",
+                "## 核心判断\n\n- 判断：证据链可验证。",
+                "## 各委员会结论\n\n- 商业委员会：支持。\n- 创业委员会：支持。\n- 投资委员会：支持。\n- 咨询委员会：支持。\n- 产品委员会：支持。",
+                "## 跨委员会共识\n\n**强共识**\n\n- 共识：先验证付费意愿。\n\n**关键分歧**\n\n- 分歧：先诊断还是先服务包。",
+                "## 最大机会\n\n- 最大机会：沉淀可复用方案。\n- 最大风险：客户不愿付费。\n- 最强反证：客户只愿免费咨询。\n- 失败路径 1：无法复用交付。",
+                "## 建议行动清单\n\n- 30 天：验证。\n- 60 天：复盘。\n- 90 天：决策。",
+                "## 证据包\n\n- E1：来源块。",
+                "## 假设账本\n\n- H1：客户愿意付费。",
+                "## 附录：各 Persona 关键意见摘要\n\n- Persona：观点。",
+                "## 决策记录条目\n\n- 决策编号：SB-test。",
             ]
         )
 
