@@ -219,6 +219,45 @@ def meaningful_text(text: str) -> str:
     return cleaned.strip()
 
 
+def heading_body_blocks(text: str) -> list[tuple[int, str, str]]:
+    in_fence = False
+    matches: list[tuple[int, int, int, str]] = []
+    for line in re.finditer(r"^.*$", text, flags=re.MULTILINE):
+        stripped = line.group(0).strip()
+        if stripped.startswith("```"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        match = re.match(r"^(#{1,6})\s+(.+?)\s*$", line.group(0))
+        if match:
+            matches.append((line.start(), line.end(), len(match.group(1)), match.group(2).strip()))
+
+    blocks: list[tuple[int, str, str]] = []
+    for index, (_start, heading_end, level, heading) in enumerate(matches):
+        end = len(text)
+        for next_start, _next_heading_end, next_level, _next_heading in matches[index + 1 :]:
+            if next_level <= level:
+                end = next_start
+                break
+        blocks.append((level, heading, text[heading_end:end].strip()))
+    return blocks
+
+
+def dangling_subsection_issues(markdown: str) -> list[str]:
+    issues: list[str] = []
+    for level, heading, body in heading_body_blocks(markdown):
+        if level < 3:
+            continue
+        meaningful = meaningful_text(body)
+        if not meaningful:
+            issues.append(f"{heading} 缺少实质正文")
+            continue
+        if len(meaningful) <= 2:
+            issues.append(f"{heading} 正文疑似残句")
+    return issues
+
+
 def section_body_map(markdown: str) -> dict[str, str]:
     sections: dict[str, str] = {}
     for section in split_main_section_blocks(markdown):
@@ -236,6 +275,7 @@ def has_any_marker(text: str, markers: list[str]) -> bool:
 def required_content_issues(markdown: str) -> list[str]:
     issues: list[str] = []
     sections = section_body_map(markdown)
+    issues.extend(dangling_subsection_issues(markdown))
 
     for canonical in BOARD_MEMO_CANONICAL_SECTIONS:
         if canonical == "# 《董事会建议书》":

@@ -421,6 +421,35 @@ class ValidateSkillTests(unittest.TestCase):
         self.assertTrue(any("跨委员会共识与关键分歧" in issue for issue in issues))
         self.assertTrue(any("最大机会、最大风险与反证路径" in issue for issue in issues))
 
+    def test_board_memo_with_dangling_subsection_is_not_complete(self) -> None:
+        dangling = "\n\n".join(
+            [
+                "# 《董事会建议书》：残句报告",
+                "## 一页结论\n\n- 当前建议：推进。",
+                "## 输入材料与审议范围\n\n材料已拆解。",
+                "## Go / No-Go / Pivot 建议\n\n- 推进：满足条件。",
+                "## 核心判断依据\n\n- 判断：需要证据。",
+                "## 五个委员会意见\n\n- 商业委员会：支持。\n- 创业委员会：支持。\n- 投资委员会：支持。\n- 咨询委员会：支持。\n- 产品委员会：支持。",
+                (
+                    "## 跨委员会共识与关键分歧\n\n"
+                    "### 1. 强共识\n\n- 共识：先验证付费意愿。\n\n"
+                    "### 2. 关键分歧\n\n- 分歧：进入节奏。\n\n"
+                    "### 3. 分歧解决原则\n\n为"
+                ),
+                "## 最大机会、最大风险与反证路径\n\n- 最大机会：获得高价值客户。\n- 最大风险：付费意愿不足。\n- 最强反证：客户拒绝为诊断付费。\n- 失败路径 1：需求不存在。",
+                "## 30 / 60 / 90 天行动计划\n\n- 30 天：验证。\n- 60 天：复盘。\n- 90 天：决策。",
+                "## 附录 A：证据包\n\n- E1：来源块。",
+                "## 附录 B：待验证假设\n\n- H1：客户愿意付费。",
+                "## 附录 C：Persona 关键意见摘要\n\n- Persona：观点。",
+                "## 附录 D：决策记录\n\n- 决策编号：SB-test。",
+            ]
+        )
+
+        self.assertEqual([], super_board_server.board_memo_missing_markers(dangling))
+        self.assertFalse(super_board_server.board_memo_is_complete(dangling))
+        issues = super_board_server.board_memo_quality_issues(dangling)
+        self.assertTrue(any("分歧解决原则" in issue for issue in issues), issues)
+
     def test_call_model_rejects_content_incomplete_board_memo(self) -> None:
         content_missing = "\n\n".join(
             [
