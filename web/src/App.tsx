@@ -258,6 +258,29 @@ function downloadText(filename: string, content: string) {
   URL.revokeObjectURL(url);
 }
 
+function filenameBaseFromName(name: string) {
+  const cleanName = name.trim().split(/[\\/]/).pop() ?? "";
+  return cleanName.replace(/\.[^.]+$/, "").trim();
+}
+
+function safeDownloadBaseName(value: unknown) {
+  const raw = String(value ?? "").trim();
+  const normalized = filenameBaseFromName(raw)
+    .replace(/[<>:"/\\|?*\x00-\x1F]/g, "-")
+    .replace(/\s+/g, " ")
+    .replace(/-+/g, "-")
+    .replace(/^[.\-\s]+|[.\-\s]+$/g, "");
+  return normalized || "SuperBoard";
+}
+
+function boardMemoFilename(preview: Preview) {
+  const files = preview.material_pack?.files ?? [];
+  const sourceName = files.length === 1
+    ? files[0]?.name
+    : preview.material_pack?.title ?? preview.record.title;
+  return `${safeDownloadBaseName(sourceName)}-SuperBoard董事会建议书.md`;
+}
+
 function renderRecordMarkdown(record: Record<string, unknown>) {
   return [
     `# 决策记录：${record.title ?? ""}`,
@@ -514,7 +537,7 @@ export function App() {
 
   function exportBoardMemo() {
     if (!preview) return;
-    downloadText("超级董事会建议书.md", preview.board_memo);
+    downloadText(boardMemoFilename(preview), preview.board_memo);
   }
 
   return (
