@@ -1,4 +1,4 @@
-import { ChangeEvent, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, DragEvent, useEffect, useMemo, useState } from "react";
 import { Download, FileText, Layers, RefreshCw, Save, ShieldCheck, Upload } from "lucide-react";
 
 type Mode = {
@@ -137,8 +137,8 @@ const fieldLabels: Record<string, string> = {
   mode_id: "审议模式",
   title: "标题",
   decision: "建议",
-  assumptions: "假设账本",
-  evidence_packets: "证据包",
+  assumptions: "待验证假设",
+  evidence_packets: "依据",
   follow_up_checkpoints: "复盘检查点",
   material_pack: "材料包",
   source_blocks: "来源块",
@@ -201,6 +201,13 @@ const valueLabels: Record<string, string> = {
 };
 
 const supportedUploadTypes = ".md,.markdown,.txt,.json,.csv,.yaml,.yml";
+const detailTabs = [
+  ["materials", "材料摘要"],
+  ["evidence", "依据"],
+  ["assumptions", "待验证假设"],
+  ["flow", "生成过程"],
+  ["record", "归档记录"]
+] as const;
 
 function formatFileSize(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;
@@ -343,6 +350,9 @@ export function App() {
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [inputFileName, setInputFileName] = useState<string | null>(null);
   const [materialPack, setMaterialPack] = useState<MaterialPack | null>(null);
+  const [showCommittees, setShowCommittees] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [isMaterialDragging, setIsMaterialDragging] = useState(false);
 
   useEffect(() => {
     fetch("/api/config")
@@ -369,11 +379,11 @@ export function App() {
     }
     if (!material.trim()) {
       setStatus("请先上传或输入材料");
-      setGenerationError("请先上传或输入材料，然后再调用模型生成建议书。");
+      setGenerationError("请先上传或输入材料，然后再生成董事会建议书。");
       return;
     }
     setIsGenerating(true);
-    setStatus(`正在调用模型生成董事会建议书：${llm.model}`);
+    setStatus(`正在生成董事会建议书：${llm.model}`);
     setGenerationError(null);
     setPreview(null);
     try {
@@ -452,9 +462,7 @@ export function App() {
     setGenerationError(message);
   }
 
-  async function handleMaterialFile(event: ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(event.target.files ?? []);
-    event.target.value = "";
+  async function processMaterialFiles(files: File[]) {
     if (files.length === 0) return;
 
     try {
@@ -489,6 +497,32 @@ export function App() {
     } catch {
       setStatus("文件读取失败，请确认它是文本文件");
     }
+  }
+
+  async function handleMaterialFile(event: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files ?? []);
+    event.target.value = "";
+    await processMaterialFiles(files);
+  }
+
+  function handleMaterialDragOver(event: DragEvent<HTMLElement>) {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "copy";
+    setIsMaterialDragging(true);
+  }
+
+  function handleMaterialDragLeave(event: DragEvent<HTMLElement>) {
+    const nextTarget = event.relatedTarget;
+    if (nextTarget instanceof Node && event.currentTarget.contains(nextTarget)) {
+      return;
+    }
+    setIsMaterialDragging(false);
+  }
+
+  async function handleMaterialDrop(event: DragEvent<HTMLElement>) {
+    event.preventDefault();
+    setIsMaterialDragging(false);
+    await processMaterialFiles(Array.from(event.dataTransfer.files ?? []));
   }
 
   async function handleRecord() {
@@ -558,58 +592,81 @@ export function App() {
       </header>
 
       <section className="mx-auto grid max-w-7xl grid-cols-1 gap-4 px-5 py-5 lg:grid-cols-[360px_minmax(0,1fr)_360px]">
-        <form className="space-y-4 rounded-lg border border-slate-200 bg-white p-4">
+        <form className="space-y-5 rounded-lg border border-slate-200 bg-white p-4">
           <div className="flex items-center gap-2">
             <Layers size={18} />
-            <h2 className="text-base font-semibold">材料与模式</h2>
+            <h2 className="text-base font-semibold">审议准备</h2>
           </div>
-          <label className="block text-sm font-medium text-slate-700" htmlFor="mode">审议模式</label>
-          <select
-            id="mode"
-            value={modeId}
-            onChange={(event) => setModeId(event.target.value)}
-            className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+
+          <section
+            className={`space-y-3 rounded-md border border-dashed p-3 ${isMaterialDragging ? "border-slate-950 bg-slate-50" : "border-transparent"}`}
+            onDragOver={handleMaterialDragOver}
+            onDragLeave={handleMaterialDragLeave}
+            onDrop={handleMaterialDrop}
           >
-            {config.modes.map((mode) => (
-              <option key={mode.mode_id} value={mode.mode_id}>{mode.name}</option>
-            ))}
-          </select>
-          <div className="rounded-md bg-slate-50 p-3 text-sm text-slate-600">{selectedMode?.description}</div>
-          <div className="flex flex-wrap gap-2">
-            {(selectedMode?.enabled_committees ?? []).map((committee) => <Badge key={committee}>{displayCommittee(committee)}</Badge>)}
-          </div>
-          <div className="flex items-center justify-between gap-3">
-            <label className="block text-sm font-medium text-slate-700" htmlFor="material">输入材料</label>
-            <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
-              <Upload size={15} />
-              上传文件
-              <input
-                type="file"
-                accept={supportedUploadTypes}
-                multiple
-                className="sr-only"
-                onChange={handleMaterialFile}
-              />
-            </label>
-          </div>
-          {inputFileName && (
-            <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-500">
-              已读取：{inputFileName}
+            <div className="text-sm font-semibold text-slate-900">1. 材料</div>
+            <div className="flex items-center justify-between gap-3">
+              <label className="block text-sm font-medium text-slate-700" htmlFor="material">输入材料</label>
+              <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                <Upload size={15} />
+                上传文件
+                <input
+                  type="file"
+                  accept={supportedUploadTypes}
+                  multiple
+                  className="sr-only"
+                  onChange={handleMaterialFile}
+                />
+              </label>
             </div>
-          )}
-          {materialPack && (
-            <div className="rounded-md border border-slate-200 bg-white px-3 py-2 text-xs text-slate-600">
-              材料包：{materialPack.title} · {materialPack.files.length} 个文件 · {materialPack.source_blocks.length} 个来源块
-            </div>
-          )}
-          <textarea
-            id="material"
-            value={material}
-            onChange={(event) => setMaterial(event.target.value)}
-            placeholder="粘贴审议材料，或点击上方上传文件。"
-            className="min-h-[420px] w-full resize-y rounded-md border border-slate-300 px-3 py-2 font-mono text-sm leading-6"
-          />
-          <div className="grid grid-cols-1 gap-2">
+            {inputFileName && (
+              <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-500">
+                已读取：{inputFileName}
+              </div>
+            )}
+            {materialPack && (
+              <div className="rounded-md border border-slate-200 bg-white px-3 py-2 text-xs text-slate-600">
+                材料包：{materialPack.title} · {materialPack.files.length} 个材料文件 · {materialPack.source_blocks.length} 个可引用来源块
+              </div>
+            )}
+            <textarea
+              id="material"
+              value={material}
+              onChange={(event) => setMaterial(event.target.value)}
+              placeholder="粘贴审议材料，或拖入 / 上传文件。"
+              className="min-h-[260px] w-full resize-y rounded-md border border-slate-300 px-3 py-2 font-mono text-sm leading-6"
+            />
+          </section>
+
+          <section className="space-y-3 border-t border-slate-200 pt-4">
+            <div className="text-sm font-semibold text-slate-900">2. 审议设置</div>
+            <label className="block text-sm font-medium text-slate-700" htmlFor="mode">审议模式</label>
+            <select
+              id="mode"
+              value={modeId}
+              onChange={(event) => setModeId(event.target.value)}
+              className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+            >
+              {config.modes.map((mode) => (
+                <option key={mode.mode_id} value={mode.mode_id}>{mode.name}</option>
+              ))}
+            </select>
+            <div className="rounded-md bg-slate-50 p-3 text-sm text-slate-600">{selectedMode?.description}</div>
+            <button
+              type="button"
+              onClick={() => setShowCommittees((value) => !value)}
+              className="rounded-md border border-slate-300 px-3 py-2 text-xs text-slate-700 hover:bg-slate-50"
+            >
+              已启用 {(selectedMode?.enabled_committees ?? []).length} 个委员会
+            </button>
+            {showCommittees && (
+              <div className="flex flex-wrap gap-2">
+                {(selectedMode?.enabled_committees ?? []).map((committee) => <Badge key={committee}>{displayCommittee(committee)}</Badge>)}
+              </div>
+            )}
+          </section>
+
+          <div className="grid grid-cols-1 gap-2 border-t border-slate-200 pt-4">
             <button
               type="button"
               onClick={generateModelMemo}
@@ -617,7 +674,7 @@ export function App() {
               className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-slate-950 px-3 py-2 text-sm font-medium text-white disabled:opacity-40"
             >
               <RefreshCw size={16} className={isGenerating ? "animate-spin" : ""} />
-              {isGenerating ? "正在生成建议书..." : "调用模型生成建议书"}
+              {isGenerating ? "正在生成董事会建议书..." : "生成董事会建议书"}
             </button>
           </div>
           <div className={`rounded-md px-3 py-2 text-xs ${isGenerating ? "border border-blue-200 bg-blue-50 text-blue-800" : "border border-slate-200 bg-slate-50 text-slate-600"}`}>
@@ -660,100 +717,131 @@ export function App() {
             </div>
           ) : (
             <pre className="h-[690px] overflow-auto whitespace-pre-wrap p-4 text-sm leading-6 text-slate-700">
-              {preview?.board_memo ?? "上传或输入材料后，点击“调用模型生成建议书”。"}
+              {preview?.board_memo ?? "上传或输入材料后，点击“生成董事会建议书”。"}
             </pre>
           )}
         </section>
 
         <aside className="space-y-4">
           <section className="rounded-lg border border-slate-200 bg-white">
-            <div className="grid grid-cols-5 border-b border-slate-200 text-xs">
-              {[
-                ["materials", "材料"],
-                ["evidence", "证据"],
-                ["assumptions", "假设账本"],
-                ["flow", "流程"],
-                ["record", "决策记录"]
-              ].map(([id, label]) => (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => setActiveTab(id as typeof activeTab)}
-                  className={`px-3 py-2 ${activeTab === id ? "bg-slate-950 text-white" : "text-slate-600"}`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-            <div className="min-h-[320px] p-4 text-sm leading-6 text-slate-700">
-              {activeTab === "materials" && (
-                <div className="space-y-3">
-                  <div className="font-medium">{preview?.material_pack?.title ?? materialPack?.title ?? "暂无材料包"}</div>
-                  {(preview?.material_pack?.files ?? materialPack?.files ?? []).map((file) => (
-                    <div key={file.file_id ?? file.name} className="rounded-md border border-slate-200 p-2">
-                      <div className="font-medium">{file.name}</div>
-                      <div className="text-xs text-slate-500">{formatFileSize(file.size)} · {valueLabels[file.status ?? "read"] ?? file.status}</div>
-                    </div>
-                  ))}
-                  <div className="text-xs text-slate-500">
-                    来源块：{(preview?.material_pack?.source_blocks ?? materialPack?.source_blocks ?? []).length}
-                  </div>
+            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+              <div>
+                <h2 className="text-base font-semibold">分析详情</h2>
+                <div className="mt-1 text-xs text-slate-500">
+                  可引用来源块：{(preview?.material_pack?.source_blocks ?? materialPack?.source_blocks ?? []).length}
                 </div>
-              )}
-              {activeTab === "evidence" && (
-                <div className="space-y-3">
-                  {evidenceRows(preview).length === 0 && <div className="text-slate-500">暂无证据包</div>}
-                  {evidenceRows(preview).map((row, index) => (
-                    <div key={index} className="rounded-md border border-slate-200 p-3">
-                      <div className="font-medium">{row.claim}</div>
-                      <div className="mt-1 text-xs text-slate-500">
-                        {valueLabels[row.claim_type] ?? row.claim_type} · {valueLabels[row.confidence] ?? row.confidence} · {row.source_file ?? "无来源文件"} / {row.source_block_id ?? "无来源块"}
-                      </div>
-                      <div className="mt-2 text-xs text-slate-600">{row.source_excerpt}</div>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {activeTab === "assumptions" && (
-                <pre className="whitespace-pre-wrap">{formatJson(assumptionRows(preview))}</pre>
-              )}
-              {activeTab === "flow" && (
-                <div className="space-y-2">
-                  {(preview?.review_run?.stages ?? []).map((stage) => (
-                    <div key={stage.stage_id} className="rounded-md border border-slate-200 p-3">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-medium">{stage.name}</span>
-                        <span className="rounded-md bg-slate-100 px-2 py-1 text-xs">{valueLabels[stage.status] ?? stage.status}</span>
-                      </div>
-                      <div className="mt-1 text-xs text-slate-500">{stage.summary}</div>
-                    </div>
-                  ))}
-                  {!preview?.review_run && <div className="text-slate-500">生成董事会建议书后显示审议流程。</div>}
-                </div>
-              )}
-              {activeTab === "record" && (
-                <div className="space-y-3">
-                  <pre className="max-h-56 overflow-auto whitespace-pre-wrap rounded-md bg-slate-50 p-3">{formatJson(preview?.record ?? {})}</pre>
-                  <div className="grid grid-cols-3 gap-2">
-                    <button type="button" disabled={!preview} onClick={() => exportRecord("md")} className="rounded-md border border-slate-300 px-2 py-2 text-xs disabled:opacity-40">导出 MD</button>
-                    <button type="button" disabled={!preview} onClick={() => exportRecord("json")} className="rounded-md border border-slate-300 px-2 py-2 text-xs disabled:opacity-40">导出 JSON</button>
-                    <button type="button" disabled={!preview} onClick={() => exportRecord("html")} className="rounded-md border border-slate-300 px-2 py-2 text-xs disabled:opacity-40">导出 HTML</button>
-                  </div>
-                  <button type="button" disabled={!preview} onClick={handleCalibration} className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm disabled:opacity-40">记录校准事件</button>
-                </div>
-              )}
-            </div>
-            <div className="border-t border-slate-200 p-4">
+              </div>
               <button
                 type="button"
-                disabled={!preview}
-                onClick={handleRecord}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm disabled:opacity-40"
+                onClick={() => setDetailsOpen((value) => !value)}
+                className="rounded-md border border-slate-300 px-3 py-2 text-xs text-slate-700 hover:bg-slate-50"
               >
-                <Save size={16} />
-                写入记录
+                {detailsOpen ? "收起" : "展开"}
               </button>
             </div>
+            {!detailsOpen ? (
+              <div className="space-y-3 p-4 text-sm leading-6 text-slate-700">
+                <div className="rounded-md border border-slate-200 p-3">
+                  <div className="font-medium">{preview?.material_pack?.title ?? materialPack?.title ?? "暂无材料包"}</div>
+                  <div className="mt-1 text-xs text-slate-500">
+                    {(preview?.material_pack?.files ?? materialPack?.files ?? []).length} 个材料文件 · {(preview?.material_pack?.source_blocks ?? materialPack?.source_blocks ?? []).length} 个可引用来源块
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleRecord}
+                  disabled={!preview}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm disabled:opacity-40"
+                >
+                  <Save size={16} />
+                  写入记录
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="flex flex-wrap gap-2 border-b border-slate-200 p-3 text-xs">
+                  {detailTabs.map(([id, label]) => (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => setActiveTab(id)}
+                      className={`rounded-md px-3 py-2 ${activeTab === id ? "bg-slate-950 text-white" : "border border-slate-300 text-slate-600"}`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <div className="min-h-[320px] p-4 text-sm leading-6 text-slate-700">
+                  {activeTab === "materials" && (
+                    <div className="space-y-3">
+                      <div className="font-medium">{preview?.material_pack?.title ?? materialPack?.title ?? "暂无材料包"}</div>
+                      {(preview?.material_pack?.files ?? materialPack?.files ?? []).map((file) => (
+                        <div key={file.file_id ?? file.name} className="rounded-md border border-slate-200 p-2">
+                          <div className="font-medium">{file.name}</div>
+                          <div className="text-xs text-slate-500">{formatFileSize(file.size)} · {valueLabels[file.status ?? "read"] ?? file.status}</div>
+                        </div>
+                      ))}
+                      <div className="text-xs text-slate-500">
+                        可引用来源块：{(preview?.material_pack?.source_blocks ?? materialPack?.source_blocks ?? []).length} 个，同一文件可拆分为多个来源块
+                      </div>
+                    </div>
+                  )}
+                  {activeTab === "evidence" && (
+                    <div className="space-y-3">
+                      {evidenceRows(preview).length === 0 && <div className="text-slate-500">暂无依据</div>}
+                      {evidenceRows(preview).map((row, index) => (
+                        <div key={index} className="rounded-md border border-slate-200 p-3">
+                          <div className="font-medium">{row.claim}</div>
+                          <div className="mt-1 text-xs text-slate-500">
+                            {valueLabels[row.claim_type] ?? row.claim_type} · {valueLabels[row.confidence] ?? row.confidence} · {row.source_file ?? "无来源文件"} / {row.source_block_id ?? "无来源块"}
+                          </div>
+                          <div className="mt-2 text-xs text-slate-600">{row.source_excerpt}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {activeTab === "assumptions" && (
+                    <pre className="whitespace-pre-wrap">{formatJson(assumptionRows(preview))}</pre>
+                  )}
+                  {activeTab === "flow" && (
+                    <div className="space-y-2">
+                      {(preview?.review_run?.stages ?? []).map((stage) => (
+                        <div key={stage.stage_id} className="rounded-md border border-slate-200 p-3">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-medium">{stage.name}</span>
+                            <span className="rounded-md bg-slate-100 px-2 py-1 text-xs">{valueLabels[stage.status] ?? stage.status}</span>
+                          </div>
+                          <div className="mt-1 text-xs text-slate-500">{stage.summary}</div>
+                        </div>
+                      ))}
+                      {!preview?.review_run && <div className="text-slate-500">暂无生成过程</div>}
+                    </div>
+                  )}
+                  {activeTab === "record" && (
+                    <div className="space-y-3">
+                      <pre className="max-h-56 overflow-auto whitespace-pre-wrap rounded-md bg-slate-50 p-3">{formatJson(preview?.record ?? {})}</pre>
+                      <div className="grid grid-cols-3 gap-2">
+                        <button type="button" disabled={!preview} onClick={() => exportRecord("md")} className="rounded-md border border-slate-300 px-2 py-2 text-xs disabled:opacity-40">导出 MD</button>
+                        <button type="button" disabled={!preview} onClick={() => exportRecord("json")} className="rounded-md border border-slate-300 px-2 py-2 text-xs disabled:opacity-40">导出 JSON</button>
+                        <button type="button" disabled={!preview} onClick={() => exportRecord("html")} className="rounded-md border border-slate-300 px-2 py-2 text-xs disabled:opacity-40">导出 HTML</button>
+                      </div>
+                      <button type="button" disabled={!preview} onClick={handleCalibration} className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm disabled:opacity-40">记录校准事件</button>
+                    </div>
+                  )}
+                </div>
+                <div className="border-t border-slate-200 p-4">
+                  <button
+                    type="button"
+                    disabled={!preview}
+                    onClick={handleRecord}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm disabled:opacity-40"
+                  >
+                    <Save size={16} />
+                    写入记录
+                  </button>
+                </div>
+              </>
+            )}
           </section>
         </aside>
       </section>

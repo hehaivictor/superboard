@@ -73,7 +73,13 @@ DECISION_LABELS = {
 }
 
 sys.path.insert(0, str(ROOT / "scripts"))
+import board_memo_structure as memo_structure  # noqa: E402
 from super_board_run import build_board_memo, build_material_pack_from_text, build_prompt_bundle, build_record, load_modes  # noqa: E402
+
+BOARD_MEMO_REQUIRED_SECTION_GROUPS = memo_structure.BOARD_MEMO_REQUIRED_SECTION_GROUPS
+BOARD_MEMO_CANONICAL_SECTIONS = memo_structure.BOARD_MEMO_CANONICAL_SECTIONS
+BOARD_MEMO_RESTART_SECTIONS = memo_structure.BOARD_MEMO_RESTART_SECTIONS
+BOARD_MEMO_TERMINAL_SECTIONS = memo_structure.BOARD_MEMO_TERMINAL_SECTIONS
 
 
 def template_version() -> str:
@@ -193,59 +199,27 @@ def normalize_model_error(status_code: int, detail: str) -> str:
 
 
 def strip_heading_numbering(heading: str) -> str:
-    text = heading.strip()
-    text = re.sub(r"^\s*第[一二三四五六七八九十百千万零〇两]+[章节部分]?[、.．:：\s-]*", "", text)
-    text = re.sub(r"^\s*[一二三四五六七八九十百千万零〇两]+[、.．:：\s-]+", "", text)
-    text = re.sub(r"^\s*\d+[\.\)、:：\s-]+", "", text)
-    text = re.sub(r"^[A-Z][\.\)、:：\s-]+", "", text)
-    return text.strip()
+    return memo_structure.strip_heading_numbering(heading)
 
 
 def normalize_board_memo_heading(heading: str) -> str:
-    text = heading.strip().lstrip("#").strip()
-    text = strip_heading_numbering(text)
-    text = re.sub(r"\s+", " ", text)
-    for canonical, aliases in BOARD_MEMO_REQUIRED_SECTION_GROUPS:
-        if canonical.startswith("# "):
-            continue
-        for alias in aliases:
-            if text == alias or alias in text:
-                return canonical
-    return text
+    return memo_structure.normalize_heading(heading)
 
 
 def board_memo_heading_sequence(board_memo: str) -> list[tuple[int, str, str]]:
-    headings: list[tuple[int, str, str]] = []
-    for line_number, line in enumerate(board_memo.splitlines(), start=1):
-        match = re.match(r"^##\s+(.+?)\s*$", line)
-        if not match:
-            continue
-        raw_heading = match.group(1).strip()
-        headings.append((line_number, raw_heading, normalize_board_memo_heading(raw_heading)))
-    return headings
+    return [(heading.line, heading.heading, heading.canonical) for heading in memo_structure.heading_sequence(board_memo)]
 
 
 def board_memo_present_sections(board_memo: str) -> set[str]:
-    present = {canonical for _line_number, _raw, canonical in board_memo_heading_sequence(board_memo)}
-    if "# 《董事会建议书》" in board_memo:
-        present.add("# 《董事会建议书》")
-    return present
+    return memo_structure.present_sections(board_memo)
 
 
 def board_memo_missing_markers(board_memo: str) -> list[str]:
-    present = board_memo_present_sections(board_memo)
-    return [canonical for canonical in BOARD_MEMO_CANONICAL_SECTIONS if canonical not in present]
+    return memo_structure.missing_markers(board_memo)
 
 
 def board_memo_has_duplicate_restart(board_memo: str) -> bool:
-    seen_terminal = False
-    for _line_number, _raw, canonical in board_memo_heading_sequence(board_memo):
-        if canonical in BOARD_MEMO_TERMINAL_SECTIONS:
-            seen_terminal = True
-            continue
-        if seen_terminal and canonical in BOARD_MEMO_RESTART_SECTIONS:
-            return True
-    return False
+    return memo_structure.has_duplicate_restart(board_memo)
 
 
 def board_memo_is_complete(board_memo: str) -> bool:
@@ -255,36 +229,11 @@ def board_memo_is_complete(board_memo: str) -> bool:
 
 
 def split_markdown_h2_blocks(text: str) -> list[tuple[str | None, str | None, str]]:
-    matches = list(re.finditer(r"^##\s+(.+?)\s*$", text, flags=re.MULTILINE))
-    if not matches:
-        return [(None, None, text.strip())] if text.strip() else []
-    blocks: list[tuple[str | None, str | None, str]] = []
-    intro = text[: matches[0].start()].strip()
-    if intro:
-        blocks.append((None, None, intro))
-    for index, match in enumerate(matches):
-        end = matches[index + 1].start() if index + 1 < len(matches) else len(text)
-        heading = match.group(1).strip()
-        blocks.append((heading, normalize_board_memo_heading(heading), text[match.start() : end].strip()))
-    return blocks
+    return memo_structure.split_markdown_blocks(text)
 
 
 def merge_model_parts(parts: list[str]) -> str:
-    merged_blocks: list[str] = []
-    seen_sections: set[str] = set()
-    for part_index, part in enumerate(parts):
-        for _heading, canonical, block in split_markdown_h2_blocks(part):
-            if not block:
-                continue
-            if canonical is None:
-                if part_index == 0:
-                    merged_blocks.append(block)
-                continue
-            if canonical in seen_sections:
-                continue
-            merged_blocks.append(block)
-            seen_sections.add(canonical)
-    return "\n\n".join(merged_blocks).strip()
+    return memo_structure.merge_model_parts(parts)
 
 
 def continuation_prompt(missing_markers: list[str], finish_reason: str) -> str:
@@ -293,7 +242,9 @@ def continuation_prompt(missing_markers: list[str], finish_reason: str) -> str:
         "上一段《董事会建议书》输出未完整结束。"
         f"finish_reason={finish_reason or 'unknown'}。\n\n"
         "只输出缺失章节，不要从头重写报告，不要重复已经存在的章节。"
-        "禁止再次输出“输入类型与审议范围”“一句话结论”“核心判断”等已存在章节，除非它们列在缺失章节中。"
+        "禁止再次输出“输入材料与审议范围”“一页结论”“核心判断依据”“证据包”“待验证假设”等已存在章节，除非它们列在缺失章节中。"
+        "续写时不要输出新的一级标题；只能使用 templates/board-memo.md 里的二级章节标题。"
+        "正文只引用证据编号，来源摘录只放在附录 A。"
         "从当前最后一个章节之后继续，保持中文、证据约束和 Mermaid 代码块格式。\n\n"
         f"当前仍缺少的关键章节：\n{missing}"
     )
@@ -375,7 +326,9 @@ def call_model(prompt_bundle: str, config: dict[str, object]) -> str:
                 "你是 Super Board 的董事会审议生成器。"
                 "必须根据用户提供的提示包输出中文《董事会建议书》。"
                 "不得编造外部事实；无法由来源块支持的内容必须标注为推断或假设。"
-                "必须包含证据包、假设账本、反证实验、推进/调整/不推进条件和决策记录条目。"
+                "必须严格使用 templates/board-memo.md 的单一目录，不要输出第二套报告结构。"
+                "一级标题只允许出现一次；正文只引用证据编号，来源摘录只放在附录 A。"
+                "必须包含证据包、待验证假设、反证路径、Go/Pivot/No-Go 条件和决策记录。"
             ),
         },
         {"role": "user", "content": prompt_bundle},
@@ -426,7 +379,9 @@ def call_model_non_streaming(prompt_bundle: str, config: dict[str, object]) -> s
                         "你是 Super Board 的董事会审议生成器。"
                         "必须根据用户提供的提示包输出中文《董事会建议书》。"
                         "不得编造外部事实；无法由来源块支持的内容必须标注为推断或假设。"
-                        "必须包含证据包、假设账本、反证实验、推进/调整/不推进条件和决策记录条目。"
+                        "必须严格使用 templates/board-memo.md 的单一目录，不要输出第二套报告结构。"
+                        "一级标题只允许出现一次；正文只引用证据编号，来源摘录只放在附录 A。"
+                        "必须包含证据包、待验证假设、反证路径、Go/Pivot/No-Go 条件和决策记录。"
                     ),
                 },
                 {"role": "user", "content": prompt_bundle},

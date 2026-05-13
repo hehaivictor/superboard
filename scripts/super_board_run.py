@@ -296,8 +296,10 @@ def build_prompt_bundle(input_path: Path, text: str, mode: dict[str, object], re
     mode_name = str(mode.get("name", record["mode_id"]))
     material_pack = record.get("material_pack", {})
     source_blocks = []
+    files = []
     if isinstance(material_pack, dict):
         source_blocks = material_pack.get("source_blocks", [])
+        files = material_pack.get("files", [])
     source_block_lines = "\n".join(
         f"- {block.get('block_id')} · {block.get('source_file')}：{str(block.get('text', '')).strip()[:140]}"
         for block in source_blocks
@@ -335,7 +337,9 @@ def build_prompt_bundle(input_path: Path, text: str, mode: dict[str, object], re
 
 - 材料包编号：{material_pack.get("pack_id") if isinstance(material_pack, dict) else ""}
 - 材料标题：{material_pack.get("title") if isinstance(material_pack, dict) else ""}
-- 文件数量：{len(material_pack.get("files", [])) if isinstance(material_pack, dict) else 0}
+- 文件数量：{len(files)}
+- 来源块数量：{len(source_blocks)}
+- 口径说明：来源块是材料文件拆分后的可引用文本片段，不代表不同文件；报告中必须写成“X 个材料文件，共拆分为 Y 个可引用来源块”。
 
 ## 来源块
 
@@ -347,7 +351,7 @@ def build_prompt_bundle(input_path: Path, text: str, mode: dict[str, object], re
 
 ## 执行说明
 
-严格遵循 `protocols/board-review.md` 和 `templates/board-memo.md`。必须输出证据包、假设账本和决策记录条目。每条核心判断必须引用来源块；没有来源块时必须标注为推断或假设。不得编造外部数据、人物原话或模型运行结果。
+严格遵循 `protocols/board-review.md` 和 `templates/board-memo.md`。只输出一套董事会建议书目录，不要先生成自定义目录再追加模板目录。正文只引用证据编号，来源摘录集中放在附录 A；待验证假设集中放在附录 B；Persona 摘要集中放在附录 C；决策记录集中放在附录 D。每条核心判断必须引用来源块；没有来源块时必须标注为推断或假设。不得编造外部数据、人物原话或模型运行结果。同一事实不要在三个以上章节重复展开。解释输入材料时必须区分“材料文件”和“来源块”：来源块是同一材料文件拆分后的文本片段，不代表不同文件。
 
 ## 输入材料
 
@@ -389,24 +393,24 @@ def build_board_memo(input_path: Path, text: str, mode: dict[str, object], recor
     assumptions = record.get("assumptions", [])
     checkpoints = record.get("follow_up_checkpoints", [])
     actions = record.get("action_items", [])
+    material_pack = record.get("material_pack", {}) if isinstance(record.get("material_pack"), dict) else {}
+    file_count = len(material_pack.get("files", [])) if isinstance(material_pack, dict) else 0
+    source_block_count = len(material_pack.get("source_blocks", [])) if isinstance(material_pack, dict) else 0
 
     return f"""# 《董事会建议书》：{title}
 
-## 生成说明
+## 1. 一页结论
 
 - 生成方式：本地结构化建议书草案，未调用外部模型。
 - 决策编号：{record.get("decision_id", "")}
 - 审议模式：{mode.get("name", mode_id)}
 - 输入类型：{INPUT_TYPE_LABELS.get(input_type, input_type)}
 - 当前建议：{DECISION_LABELS.get(decision, decision)}
+- 一句话结论：当前材料可进入董事会审议，但还不足以直接给出最终裁决。
 
-## 一页结论
+## 2. 输入材料与审议范围
 
-当前材料已经可以进入董事会审议，但还不足以直接给出“推进 / 调整 / 不推进”的最终裁决。建议先把本材料作为审议底稿，围绕证据强度、关键假设和反证实验补齐验证，再形成最终决策。
-
-依据：输入材料已被拆解为来源块，首个可引用来源为 `{source_block_id}`。所有后续判断都应继续绑定来源块，避免把推断写成事实。
-
-## 输入材料结构化拆解
+本次审议基于 {file_count} 个材料文件，共拆分为 {source_block_count} 个可引用来源块。来源块是同一文件的文本片段，不代表不同文件。
 
 ### 来源块摘要
 
@@ -420,46 +424,59 @@ def build_board_memo(input_path: Path, text: str, mode: dict[str, object], recor
 
 {required_sections or "- 暂无必选章节"}
 
-## 证据包
-
-```json
-{json.dumps(evidence, ensure_ascii=False, indent=2)}
-```
-
-## 假设账本
-
-```json
-{json.dumps(assumptions, ensure_ascii=False, indent=2)}
-```
-
-## 反证实验
-
-1. 核对每条核心判断是否能回溯到来源块；无法回溯的内容必须降级为推断或假设。
-2. 要求反方审查只寻找最强反例：用户是否真的需要、成本是否被低估、替代方案是否更便宜。
-3. 在 30 / 60 / 90 天检查点复盘实际结果，记录哪些委员会判断反复有效。
-
-## 推进 / 调整 / 不推进条件
+## 3. Go / No-Go / Pivot 建议
 
 - 推进：关键假设获得直接证据支持，且风险已有负责人和验证节奏。
 - 调整：目标仍成立，但范围、用户、定价、交付路径或证据链需要调整。
 - 不推进：核心用户需求、商业价值或执行约束无法通过反证实验。
 
-## 30 / 60 / 90 天检查点
+## 4. 核心判断依据
+
+1. 输入材料已被拆解为来源块，首个可引用来源为 `{source_block_id}`。
+2. 所有后续判断都应绑定来源块，避免把推断写成事实。
+3. 本地草案只提供结构，不替代模型董事会审议。
+
+## 5. 五个委员会意见
+
+{committees or "- 暂无启用委员会"}
+
+## 6. 跨委员会共识与关键分歧
+
+- 共识：需要补齐证据强度、关键假设和反证实验。
+- 分歧：等待模型按委员会角色形成具体意见。
+
+## 7. 最大机会、最大风险与反证路径
+
+- 最大机会：材料中可能存在可验证的产品或商业增量。
+- 最大风险：核心判断缺少直接证据时，建议会退化为泛化建议。
+- 反证路径：要求反方审查只寻找最强反例：用户是否真的需要、成本是否被低估、替代方案是否更便宜。
+
+## 8. 30 / 60 / 90 天行动计划
 
 ```json
 {json.dumps(checkpoints, ensure_ascii=False, indent=2)}
 ```
 
-## 行动项
+## 附录 A：证据包
 
 ```json
-{json.dumps(actions, ensure_ascii=False, indent=2)}
+{json.dumps(evidence, ensure_ascii=False, indent=2)}
 ```
 
-## 决策记录条目
+## 附录 B：待验证假设
 
 ```json
-{json.dumps(record, ensure_ascii=False, indent=2)}
+{json.dumps(assumptions, ensure_ascii=False, indent=2)}
+```
+
+## 附录 C：Persona 关键意见摘要
+
+- 本地草案不模拟 Persona 观点，等待模型生成。
+
+## 附录 D：决策记录
+
+```json
+{json.dumps({**record, "action_items": actions}, ensure_ascii=False, indent=2)}
 ```
 """
 

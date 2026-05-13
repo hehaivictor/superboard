@@ -9,6 +9,12 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
+SCRIPT_DIR = Path(__file__).resolve().parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+import board_memo_structure
+
 
 REQUIRED_FILES = [
     "SKILL.md",
@@ -62,20 +68,18 @@ REQUIRED_PERSONA_FIELDS = [
 ]
 
 REQUIRED_BOARD_MEMO_SECTIONS = [
-    "输入材料结构化拆解",
-    "价值链 / 工作流图",
-    "核心假设表",
-    "证据强度评级",
-    "证据包",
-    "假设账本",
-    "委员会质询记录摘要",
-    "董事会审议信号图",
-    "反证与失败路径",
-    "决策条件",
-    "30 / 60 / 90 天行动方案",
-    "30 / 60 / 90 天路线图",
-    "决策记录条目",
-    "不建议做什么",
+    "1. 一页结论",
+    "2. 输入材料与审议范围",
+    "3. Go / No-Go / Pivot 建议",
+    "4. 核心判断依据",
+    "5. 五个委员会意见",
+    "6. 跨委员会共识与关键分歧",
+    "7. 最大机会、最大风险与反证路径",
+    "8. 30 / 60 / 90 天行动计划",
+    "附录 A：证据包",
+    "附录 B：待验证假设",
+    "附录 C：Persona 关键意见摘要",
+    "附录 D：决策记录",
 ]
 
 REQUIRED_MODE_IDS = [
@@ -142,6 +146,11 @@ REPLACED_PERSONA_IDS = [
 class ValidationIssue:
     path: str
     message: str
+
+
+def has_board_memo_section(text: str, section: str) -> bool:
+    expected = board_memo_structure.normalize_heading(section)
+    return expected in board_memo_structure.present_sections(text)
 
 
 def parse_board_personas(board_path: Path) -> tuple[list[str], list[str]]:
@@ -255,7 +264,7 @@ def validate(root: Path) -> list[ValidationIssue]:
     if board_template.is_file():
         template_text = board_template.read_text(encoding="utf-8")
         for section in REQUIRED_BOARD_MEMO_SECTIONS:
-            if f"## {section}" not in template_text:
+            if not has_board_memo_section(template_text, section):
                 issues.append(ValidationIssue("templates/board-memo.md", f"missing board memo section: {section}"))
         if template_text.count("```mermaid") < REQUIRED_MERMAID_BLOCKS:
             issues.append(
@@ -292,7 +301,7 @@ def validate(root: Path) -> list[ValidationIssue]:
             continue
         output_text = output_path.read_text(encoding="utf-8")
         for section in REQUIRED_BOARD_MEMO_SECTIONS:
-            if f"## {section}" not in output_text:
+            if not has_board_memo_section(output_text, section):
                 issues.append(ValidationIssue(relative, f"missing deep output section: {section}"))
         for marker in ["反证", "失败路径", "决策条件", "30 / 60 / 90"]:
             if marker not in output_text:

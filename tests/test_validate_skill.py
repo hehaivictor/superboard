@@ -121,7 +121,7 @@ class ValidateSkillTests(unittest.TestCase):
         for relative in validate_skill.DEEP_OUTPUTS:
             text = (ROOT / relative).read_text(encoding="utf-8")
             for section in validate_skill.REQUIRED_BOARD_MEMO_SECTIONS:
-                self.assertIn(f"## {section}", text, relative)
+                self.assertTrue(validate_skill.has_board_memo_section(text, section), f"{relative}: {section}")
             for marker in ["反证", "失败路径", "决策条件", "30 / 60 / 90"]:
                 self.assertIn(marker, text, relative)
             self.assertGreaterEqual(text.count("```mermaid"), validate_skill.REQUIRED_MERMAID_BLOCKS, relative)
@@ -129,7 +129,7 @@ class ValidateSkillTests(unittest.TestCase):
     def test_board_template_contains_required_mermaid_blocks(self) -> None:
         text = (ROOT / "templates/board-memo.md").read_text(encoding="utf-8")
         self.assertGreaterEqual(text.count("```mermaid"), validate_skill.REQUIRED_MERMAID_BLOCKS)
-        for section in ["证据包", "假设账本", "决策记录条目"]:
+        for section in ["附录 A：证据包", "附录 B：待验证假设", "附录 D：决策记录"]:
             self.assertIn(f"## {section}", text)
 
     def test_required_modes_exist_and_have_unique_ids(self) -> None:
@@ -227,10 +227,15 @@ class ValidateSkillTests(unittest.TestCase):
         self.assertIn("review_run", record)
         self.assertGreaterEqual(len(record["review_run"]["stages"]), 6)
         self.assertIn("## 来源块", bundle)
+        self.assertIn("文件数量：1", bundle)
+        self.assertIn("来源块数量：1", bundle)
+        self.assertIn("来源块是材料文件拆分后的可引用文本片段，不代表不同文件", bundle)
         self.assertIn("src-001 · a.md", bundle)
         self.assertIn("等待模型", bundle)
         self.assertIn("# 《董事会建议书》：自定义材料包", memo)
-        self.assertIn("## 证据包", memo)
+        self.assertIn("1 个材料文件，共拆分为 1 个可引用来源块", memo)
+        self.assertIn("来源块是同一文件的文本片段，不代表不同文件", memo)
+        self.assertIn("## 附录 A：证据包", memo)
         self.assertIn("未调用外部模型", memo)
         self.assertIn("src-001 · a.md", memo)
 
@@ -455,6 +460,63 @@ class ValidateSkillTests(unittest.TestCase):
         issues = audit_board_memo.audit_text(duplicated)
 
         self.assertTrue(any(issue["code"] == "duplicate_restart" for issue in issues))
+
+    def test_h1_numbered_sections_and_h2_template_restart_are_duplicate(self) -> None:
+        duplicated = "\n\n".join(
+            [
+                "# 《董事会建议书》",
+                "# 1. 输入材料结构化拆解",
+                "第一套范围。",
+                "# 3. 证据包",
+                "第一套证据。",
+                "# 4. 假设账本",
+                "第一套假设。",
+                "# 10. 决策记录条目",
+                "第一套记录。",
+                "## 输入类型与审议范围",
+                "第二套范围。",
+                "## 证据包",
+                "第二套证据。",
+                "## 假设账本",
+                "第二套假设。",
+            ]
+        )
+
+        issues = audit_board_memo.audit_text(duplicated)
+
+        self.assertTrue(super_board_server.board_memo_has_duplicate_restart(duplicated))
+        self.assertTrue(any(issue["code"] == "duplicate_restart" for issue in issues))
+
+    def test_merge_model_parts_drops_h1_h2_duplicate_restart_sections(self) -> None:
+        first_part = "\n\n".join(
+            [
+                "# 《董事会建议书》",
+                "# 1. 输入材料结构化拆解",
+                "原始范围",
+                "# 3. 证据包",
+                "原始证据",
+                "# 10. 决策记录条目",
+                "原始记录",
+            ]
+        )
+        continuation = "\n\n".join(
+            [
+                "## 输入类型与审议范围",
+                "重复范围",
+                "## 证据包",
+                "重复证据",
+                "## 核心判断",
+                "新增判断",
+            ]
+        )
+
+        merged = super_board_server.merge_model_parts([first_part, continuation])
+
+        self.assertIn("原始范围", merged)
+        self.assertIn("原始证据", merged)
+        self.assertNotIn("重复范围", merged)
+        self.assertNotIn("重复证据", merged)
+        self.assertIn("新增判断", merged)
 
     def test_call_model_continues_when_stream_finishes_by_length(self) -> None:
         first_part = "# 《董事会建议书》\n\n## 输入类型与审议范围\n\n开头内容。"

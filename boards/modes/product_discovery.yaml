@@ -11,12 +11,14 @@ enabled_committees:
   - startup-mentors
   - product-users
 required_sections:
-  - 输入材料结构化拆解
-  - 价值链 / 工作流图
-  - 证据包
-  - 假设账本
-  - 最大机会
-  - 需要补充验证的问题
-  - 建议行动清单
+  - 一页结论
+  - 输入材料与审议范围
+  - Go / No-Go / Pivot 建议
+  - 核心判断依据
+  - 五个委员会意见
+  - 最大机会、最大风险与反证路径
+  - 30 / 60 / 90 天行动计划
+  - 附录 A：证据包
+  - 附录 B：待验证假设
 depth: focused
 include_persona_appendix: true
