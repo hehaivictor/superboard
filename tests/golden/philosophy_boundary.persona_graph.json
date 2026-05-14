@@ -1,0 +1,7 @@
+{
+  "case_id": "philosophy_boundary",
+  "description": "哲学与历史人物只提供价值、伦理、长期性和边界判断，不替代商业证据。",
+  "expected_personas": ["laozi", "confucius", "wang-yangming", "sun-tzu"],
+  "expected_graph_fields": ["boundaries", "model_comparisons", "counter_tests"],
+  "must_not": ["philosophy_as_business_evidence", "ancient_voice_impersonation"]
+}

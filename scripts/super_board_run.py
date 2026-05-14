@@ -16,6 +16,9 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 import ontology_matcher
+import compile_persona_prompt
+import persona_action_audit
+import persona_graph_loader
 import seat_view_selector
 
 
@@ -223,9 +226,98 @@ def compact_ontology_rule_hits(trace: list[dict[str, Any]]) -> list[dict[str, An
             "missing_evidence": hit.get("missing_evidence", []),
             "counter_test": hit.get("counter_test", ""),
             "confidence_boundary": hit.get("confidence_boundary", []),
+            "claim_id": hit.get("claim_id", ""),
+            "model_id": hit.get("model_id", ""),
+            "source_ids": hit.get("source_ids", []),
+            "boundary_id": hit.get("boundary_id", ""),
+            "counter_test_id": hit.get("counter_test_id", ""),
+            "relation_ids": hit.get("relation_ids", []),
+            "governance_checks": hit.get("governance_checks", []),
         }
         for hit in trace
     ]
+
+
+def build_persona_graph_refs(
+    graphs: dict[str, dict[str, Any]],
+    ontology_rule_hits: list[dict[str, Any]],
+    selected_seats: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    refs: list[dict[str, Any]] = []
+    seen: set[tuple[str, str]] = set()
+    for hit in ontology_rule_hits:
+        persona_id = str(hit.get("persona_id", ""))
+        rule_id = str(hit.get("rule_id", ""))
+        graph = graphs.get(persona_id)
+        ref = persona_graph_loader.persona_graph_refs(graph or {}, rule_id)
+        if not ref:
+            continue
+        key = (persona_id, str(ref.get("claim_id", "")))
+        if key not in seen:
+            refs.append(ref)
+            seen.add(key)
+    for seat in selected_seats:
+        persona_id = str(seat.get("persona_id", ""))
+        graph = graphs.get(persona_id)
+        ref = persona_graph_loader.persona_graph_refs(graph or {})
+        if not ref:
+            continue
+        key = (persona_id, str(ref.get("claim_id", "")))
+        if key not in seen:
+            refs.append(ref)
+            seen.add(key)
+    return refs
+
+
+def build_model_comparisons(graphs: dict[str, dict[str, Any]], selected_seats: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    comparisons: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for seat in selected_seats:
+        persona_id = str(seat.get("persona_id", ""))
+        graph = graphs.get(persona_id, {})
+        for comparison in persona_graph_loader.graph_list(graph.get("model_comparisons"))[:1]:
+            comparison_id = f"{persona_id}:{comparison.get('comparison_id', '')}"
+            if comparison_id in seen:
+                continue
+            item = dict(comparison)
+            item["persona_id"] = persona_id
+            item["display_name"] = graph.get("person", {}).get("display_name", seat.get("display_name", ""))
+            comparisons.append(item)
+            seen.add(comparison_id)
+    return comparisons
+
+
+def build_action_audit_entries(
+    ontology_rule_hits: list[dict[str, Any]],
+    selected_seats: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    entries: list[dict[str, Any]] = []
+    hits_by_persona = {str(hit.get("persona_id", "")): hit for hit in ontology_rule_hits}
+    for seat in selected_seats:
+        persona_id = str(seat.get("persona_id", ""))
+        hit = hits_by_persona.get(persona_id, {})
+        entries.append(
+            persona_action_audit.make_audit_entry(
+                persona_id=persona_id,
+                action="ExplainSelection",
+                input_summary=str(seat.get("selection_reason", ""))[:160],
+                output_summary=str(seat.get("viewpoint") or seat.get("counter_signal") or "")[:160],
+                evidence_refs=[str(item) for item in hit.get("source_ids", [])] if isinstance(hit.get("source_ids"), list) else [],
+                boundary_refs=[str(hit.get("boundary_id", ""))] if hit.get("boundary_id") else [],
+                counterweight_refs=[str(item).replace("由 ", "").replace(" 制衡检查", "") for item in hit.get("governance_checks", [])]
+                if isinstance(hit.get("governance_checks"), list)
+                else [],
+            )
+        )
+    return entries
+
+
+def flatten_governance_checks(ontology_rule_hits: list[dict[str, Any]]) -> list[str]:
+    checks: list[str] = []
+    for hit in ontology_rule_hits:
+        if isinstance(hit.get("governance_checks"), list):
+            checks.extend(str(item) for item in hit["governance_checks"] if str(item).strip())
+    return list(dict.fromkeys(checks))
 
 
 def first_source_block(material_pack: dict[str, Any]) -> dict[str, Any]:
@@ -253,6 +345,7 @@ def build_record(
     ontology_trace = ontology_matcher.match_ontology_trace(ROOT, text)
     ontology_rule_hits = compact_ontology_rule_hits(ontology_trace)
     committee_rule_matrix = ontology_matcher.committee_rule_matrix(ontology_trace)
+    persona_graphs = persona_graph_loader.load_persona_graphs(ROOT)
     seat_selection = seat_view_selector.select_seats(
         ROOT,
         text,
@@ -265,6 +358,11 @@ def build_record(
         for seat in seat_selection["selected_seats"]
         if seat.get("ontology_level") == "triggered_specialist"
     ]
+    selected_seats = seat_selection["selected_seats"]
+    persona_graph_refs = build_persona_graph_refs(persona_graphs, ontology_rule_hits, selected_seats)
+    model_comparisons = build_model_comparisons(persona_graphs, selected_seats)
+    action_audit = build_action_audit_entries(ontology_rule_hits, selected_seats)
+    governance_checks = flatten_governance_checks(ontology_rule_hits)
     return {
         "decision_id": decision_id,
         "created_at": created_at,
@@ -278,9 +376,14 @@ def build_record(
         "ontology_rule_hits": ontology_rule_hits,
         "committee_rule_matrix": committee_rule_matrix,
         "triggered_specialists": triggered_specialists,
-        "selected_seats": seat_selection["selected_seats"],
+        "selected_seats": selected_seats,
         "seat_viewpoints": seat_selection["seat_viewpoints"],
         "seat_selection_trace": seat_selection["seat_selection_trace"],
+        "persona_graph_refs": persona_graph_refs,
+        "model_comparisons": model_comparisons,
+        "action_audit": action_audit,
+        "governance_checks": governance_checks,
+        "ontology_update_candidates": [],
         "assumptions": [
             {
                 "assumption": "审议尚未由模型完成，此记录为运行器生成的待填充骨架。",
@@ -379,6 +482,12 @@ def build_prompt_bundle(input_path: Path, text: str, mode: dict[str, object], re
         for seat in selected_seats
         if isinstance(seat, dict)
     )
+    persona_graphs = persona_graph_loader.load_persona_graphs(ROOT)
+    persona_fragments = "\n\n".join(
+        compile_persona_prompt.compile_persona_fragment(persona_graphs[str(ref.get("persona_id"))], ref)
+        for ref in record.get("persona_graph_refs", [])
+        if isinstance(ref, dict) and str(ref.get("persona_id")) in persona_graphs
+    )
     return f"""# 超级董事会提示包
 
 ## 决策记录
@@ -425,6 +534,10 @@ def build_prompt_bundle(input_path: Path, text: str, mode: dict[str, object], re
 ## 本次审议席位
 
 {selected_seat_lines or "- 暂无席位选择；请先检查 boards/default-board.yaml。"}
+
+## 人物本体图谱片段
+
+{persona_fragments or "- 暂无人物本体图谱片段；请检查 persona_graph_refs。"}
 
 ## 执行说明
 

@@ -1,0 +1,7 @@
+{
+  "case_id": "business_strategy",
+  "description": "市场进入、竞争策略、现金流、组织扩张类审议。",
+  "expected_personas": ["warren-buffett", "michael-porter", "peter-drucker", "sun-tzu"],
+  "expected_graph_fields": ["historical_decisions", "episodes", "relations", "evidence_graph"],
+  "must_not": ["celebrity_effect_over_evidence", "unbounded_go_recommendation"]
+}

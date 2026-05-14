@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://super-board.local/ontology/persona_eval_case.schema.json",
+  "title": "Persona Eval Case",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "eval_id",
+    "scenario",
+    "tests",
+    "expected_behavior",
+    "failure_signal"
+  ],
+  "properties": {
+    "eval_id": {
+      "type": "string"
+    },
+    "scenario": {
+      "type": "string"
+    },
+    "tests": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
+    },
+    "expected_behavior": {
+      "type": "string"
+    },
+    "failure_signal": {
+      "type": "string"
+    }
+  }
+}

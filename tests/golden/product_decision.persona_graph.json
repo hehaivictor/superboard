@@ -1,0 +1,7 @@
+{
+  "case_id": "product_decision",
+  "description": "产品定价、MVP、用户留存、体验取舍类审议。",
+  "expected_personas": ["marty-cagan", "don-norman", "zhang-xiaolong", "peter-drucker"],
+  "expected_graph_fields": ["claims", "mental_models", "boundaries", "counter_tests", "model_comparisons"],
+  "must_not": ["invent_direct_quote", "show_inactive_seats", "english_display_name"]
+}

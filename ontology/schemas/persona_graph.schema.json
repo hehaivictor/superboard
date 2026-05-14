@@ -1,0 +1,183 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://super-board.local/ontology/persona_graph.schema.json",
+  "title": "Super Board Persona Graph",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "person",
+    "ontology_contract",
+    "sources",
+    "claims",
+    "mental_models",
+    "heuristics",
+    "historical_decisions",
+    "episodes",
+    "expression_patterns",
+    "boundaries",
+    "contradictions",
+    "actions",
+    "decision_rules",
+    "relations",
+    "representative_viewpoints",
+    "evidence_graph",
+    "model_comparisons",
+    "action_audit",
+    "eval_cases",
+    "ontology_updates",
+    "version_log"
+  ],
+  "properties": {
+    "person": {
+      "type": "object",
+      "required": [
+        "persona_id",
+        "display_name",
+        "english_name",
+        "committee",
+        "ontology_level",
+        "source_quality"
+      ],
+      "additionalProperties": true
+    },
+    "ontology_contract": {
+      "type": "object",
+      "required": [
+        "purpose",
+        "consent_level",
+        "allowed_actions",
+        "forbidden_actions",
+        "high_stakes_boundary",
+        "public_figure_disclaimer",
+        "private_memory_policy",
+        "dangerous_when",
+        "requires_counterweight_from",
+        "must_be_checked_by"
+      ],
+      "additionalProperties": true
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "$ref": "persona_source.schema.json"
+      },
+      "minItems": 1
+    },
+    "claims": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "minItems": 5
+    },
+    "mental_models": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "heuristics": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "historical_decisions": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "minItems": 3
+    },
+    "episodes": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "minItems": 3
+    },
+    "expression_patterns": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "minItems": 3
+    },
+    "boundaries": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "minItems": 3
+    },
+    "contradictions": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "actions": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "decision_rules": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "minItems": 5
+    },
+    "relations": {
+      "type": "array",
+      "items": {
+        "$ref": "persona_relation.schema.json"
+      },
+      "minItems": 5
+    },
+    "representative_viewpoints": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "evidence_graph": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "model_comparisons": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "action_audit": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "eval_cases": {
+      "type": "array",
+      "items": {
+        "$ref": "persona_eval_case.schema.json"
+      },
+      "minItems": 3
+    },
+    "ontology_updates": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "version_log": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    }
+  }
+}

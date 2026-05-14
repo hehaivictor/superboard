@@ -18,7 +18,12 @@
     "follow_up_checkpoints",
     "selected_seats",
     "seat_viewpoints",
-    "seat_selection_trace"
+    "seat_selection_trace",
+    "persona_graph_refs",
+    "model_comparisons",
+    "action_audit",
+    "governance_checks",
+    "ontology_update_candidates"
   ],
   "properties": {
     "decision_id": {
@@ -102,6 +107,36 @@
             "items": {
               "type": "string"
             }
+          },
+          "claim_id": {
+            "type": "string"
+          },
+          "model_id": {
+            "type": "string"
+          },
+          "source_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "boundary_id": {
+            "type": "string"
+          },
+          "counter_test_id": {
+            "type": "string"
+          },
+          "relation_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "governance_checks": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
       }
@@ -149,6 +184,36 @@
       }
     },
     "seat_selection_trace": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "persona_graph_refs": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "model_comparisons": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "action_audit": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "governance_checks": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "ontology_update_candidates": {
       "type": "array",
       "items": {
         "type": "object"

@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://super-board.local/ontology/persona_source.schema.json",
+  "title": "Persona Source",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "source_id",
+    "title",
+    "source_type",
+    "source_quality",
+    "usage_boundary"
+  ],
+  "properties": {
+    "source_id": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "source_type": {
+      "type": "string"
+    },
+    "source_quality": {
+      "enum": [
+        "high",
+        "medium",
+        "low"
+      ]
+    },
+    "usage_boundary": {
+      "type": "string"
+    }
+  }
+}

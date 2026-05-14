@@ -14,6 +14,7 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 from ontology_loader import load_json_or_yaml, load_persona_ontologies, core_persona_ids
+import persona_graph_loader
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -39,7 +40,13 @@ def evidence_refs(text: str, triggers: list[str]) -> list[str]:
     return refs
 
 
-def build_trace_hit(persona: dict[str, Any], rule: dict[str, Any], triggered_by: list[str]) -> dict[str, Any]:
+def build_trace_hit(
+    persona: dict[str, Any],
+    rule: dict[str, Any],
+    triggered_by: list[str],
+    graph: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    graph_refs = persona_graph_loader.persona_graph_refs(graph or {}, str(rule.get("rule_id", ""))) if graph else {}
     return {
         "persona_id": persona["persona_id"],
         "persona_name": persona.get("display_name") or persona["name"],
@@ -56,13 +63,31 @@ def build_trace_hit(persona: dict[str, Any], rule: dict[str, Any], triggered_by:
         "missing_evidence": rule.get("evidence_required", []),
         "counter_test": "; ".join(rule.get("counter_tests", [])),
         "confidence_boundary": rule.get("confidence_boundary", []),
+        "claim_id": graph_refs.get("claim_id", ""),
+        "model_id": graph_refs.get("model_id", ""),
+        "source_ids": graph_refs.get("source_ids", []),
+        "boundary_id": graph_refs.get("boundary_id", ""),
+        "counter_test_id": graph_refs.get("counter_test_id", ""),
+        "relation_ids": graph_refs.get("relation_ids", []),
+        "governance_checks": governance_checks_for_graph(graph or {}),
     }
+
+
+def governance_checks_for_graph(graph: dict[str, Any]) -> list[str]:
+    contract = graph.get("ontology_contract") if isinstance(graph.get("ontology_contract"), dict) else {}
+    checks: list[str] = []
+    for persona_id in contract.get("must_be_checked_by", []) if isinstance(contract.get("must_be_checked_by"), list) else []:
+        checks.append(f"由 {persona_id} 制衡检查")
+    if not checks:
+        checks.append("必须回到当前材料证据和反证实验")
+    return checks
 
 
 def match_ontology_trace(root: Path, text: str, limit_per_persona: int = 2) -> list[dict[str, Any]]:
     board = load_json_or_yaml(root / "boards" / "default-board.yaml")
     core_ids = set(core_persona_ids(board))
     personas = load_persona_ontologies(root)
+    graphs = persona_graph_loader.load_persona_graphs(root)
     lowered = normalize(text)
     trace: list[dict[str, Any]] = []
 
@@ -76,7 +101,7 @@ def match_ontology_trace(root: Path, text: str, limit_per_persona: int = 2) -> l
             triggered_by = evidence_refs(lowered, triggers)
             if not triggered_by:
                 continue
-            trace.append(build_trace_hit(persona, rule, triggered_by))
+            trace.append(build_trace_hit(persona, rule, triggered_by, graphs.get(persona_id)))
             hits_for_persona += 1
             if hits_for_persona >= limit_per_persona:
                 break

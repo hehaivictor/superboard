@@ -1539,3 +1539,1362 @@ cd web && npm run build
 - 不允许非本体人物进入用户可见建议书。
 - 用户可见人物名只用中文展示名。
 - Harness 与 Superpowers 验证链必须完整。
+
+## Q27：分析 `qa-palantir-ontology-digital-twin.md` 这个文档，Super Board 中的本体论人物是否可以进化？
+
+可以，而且非常适合进化。
+
+但要先说边界：Super Board 不应该把人物做成「数字本人」，而应该做成「决策本体人物」。
+
+参考文档里真正有价值的地方，不是「让 AI 模仿一个人说话」，而是把一个人拆成可运行的对象系统：
+
+- 对象。
+- 关系。
+- 动作。
+- 权限。
+- 审计。
+- 持续更新。
+
+Super Board 现在已经有第一层本体雏形：
+
+- `concepts`。
+- `decision_rules`。
+- `activation`。
+- `representative_viewpoints`。
+- `evidence_thresholds`。
+- `counter_tests`。
+- `misuse_guardrails`。
+
+这些字段已经比简单 persona prompt 强很多，但它仍然偏「结构化规则 YAML」，不是完整的 Palantir-style 人物认知图谱。
+
+如果参考 Palantir Ontology 的思想，Super Board 的人物本体可以继续进化成 4 层：
+
+### 第一层：人物从规则表升级为认知对象图
+
+每个人不再只是一个 YAML 文件，而是一个 `persona_graph`。
+
+这个图谱里应该有：
+
+- 人物身份边界。
+- 核心概念。
+- 判断规则。
+- 心智模型。
+- 历史案例。
+- 适用条件。
+- 不适用条件。
+- 误用边界。
+- 反证实验。
+- 与其他人物的分歧关系。
+
+这样，系统不是在问「某某会怎么说」，而是在问：
+
+> 当前问题触发了这个人物本体中的哪些概念、规则、证据门槛和边界？
+
+### 第二层：证据图谱
+
+人物观点必须绑定证据，而不是只绑定名人标签。
+
+每条人物观点都应该能追溯到：
+
+- `source_id`：来自哪类公开来源。
+- `claim_id`：抽象出的主张是什么。
+- `rule_id`：命中了哪条判断规则。
+- `boundary_id`：这个观点有什么边界。
+- `counter_test_id`：什么实验可以推翻它。
+
+否则名人效应会变成伪权威。
+
+### 第三层：Action 层
+
+参考 Palantir AIP 的做法，本体不只描述世界，还应该能触发动作。
+
+在 Super Board 里，这些动作可以是：
+
+- 要求补证据。
+- 要求反证实验。
+- 要求降级建议强度。
+- 要求标注高风险判断。
+- 要求进入观察而不是 Go。
+- 要求把某个观点转译成 30 / 60 / 90 天检查点。
+
+这比「输出一段观点」更有价值，因为它能影响建议书的结构和决策质量。
+
+### 第四层：持续进化与校准
+
+本体人物不能一次写死。
+
+每次建议书之后，都应该能沉淀：
+
+- 哪些人物视角被触发。
+- 哪些规则反复有效。
+- 哪些规则经常误判。
+- 哪些来源不足。
+- 哪些案例需要补充。
+- 哪些人物不适合某类问题。
+
+这就是从「静态蒸馏」走向「可校准本体」。
+
+## Q28：不要一点点进化，我希望所有人都有脱胎换骨的变化。基于这个目标，详细实施计划是什么？
+
+如果目标不是试点，而是所有人都脱胎换骨，那么应该按一次性重构做。
+
+核心判断是：
+
+> 不再把人物本体当成 `ontology/personas/*.yaml` 的增强字段，而是把所有人物统一升级为 `persona_graph`。
+
+旧 YAML 可以保留兼容，但不再是核心能力。
+
+### 总目标
+
+把 Super Board 的所有人物从「静态人物规则」升级为：
+
+> 人物认知图谱 + 来源证据 + 动作治理 + 反证校准 + 决策复盘。
+
+落地后应该达到：
+
+- 所有人物都有独立 `persona_graph`。
+- 每个人都有来源、主张、心智模型、启发式、边界、反证、误用风险、代表观点、评估用例。
+- 建议书中的人物观点能追溯到 `claim_id`、`model_id`、`source_id`、`boundary_id`。
+- Web、CLI、视觉报告、validator、Harness 都消费同一套新本体。
+- 仍然不声称「数字本人」，只说「某某视角下」「基于公开材料抽象出的本体视角」。
+
+### 实施阶段
+
+#### 阶段 0：计划和边界
+
+要做：
+
+- 更新 `PLANS.md`。
+- 更新 `.harness/current_sprint.md`。
+- 追加 `logs/execution_stream.log`。
+- 明确本轮目标是「全量人物图谱化」，不是局部 patch。
+
+非目标：
+
+- 不做真人数字分身。
+- 不做语音、头像、聊天人格。
+- 不新增外部模型调用。
+- 不把来源薄的人硬说成权威。
+
+#### 阶段 1：新增人物图谱 schema
+
+新增：
+
+- `ontology/schemas/persona_graph.schema.json`
+- `ontology/schemas/persona_source.schema.json`
+- `ontology/schemas/persona_eval_case.schema.json`
+- `ontology/schemas/persona_relation.schema.json`
+
+核心字段包括：
+
+```json
+{
+  "person": {},
+  "ontology_contract": {},
+  "sources": [],
+  "claims": [],
+  "mental_models": [],
+  "heuristics": [],
+  "historical_decisions": [],
+  "episodes": [],
+  "expression_patterns": [],
+  "boundaries": [],
+  "contradictions": [],
+  "actions": [],
+  "relations": [],
+  "representative_viewpoints": [],
+  "evidence_graph": {},
+  "model_comparisons": [],
+  "action_audit": {},
+  "eval_cases": [],
+  "ontology_updates": [],
+  "version_log": []
+}
+```
+
+#### 阶段 2：全量人物图谱生成
+
+所有人物都要有 `ontology/persona_graphs/<person-id>.json`。
+
+每个文件必须包含：
+
+- 中文展示名。
+- 英文名只作为内部字段。
+- 所属委员会。
+- 是否常驻。
+- 是否触发专家。
+- 激活条件。
+- 证据门槛。
+- 核心主张。
+- 心智模型。
+- 决策规则。
+- 历史案例。
+- 误用边界。
+- 反证实验。
+- 可触发动作。
+- 评估用例。
+- 版本日志。
+
+人物观点不能再只是一句「某某会认为」。
+
+必须是：
+
+> 当前材料命中了哪些概念、哪条规则、哪个证据缺口、哪个反证实验，所以某某视角下会给出什么有限判断。
+
+#### 阶段 3：loader 和 validator
+
+新增：
+
+- `scripts/persona_graph_loader.py`
+- `scripts/validate_persona_graph.py`
+- `scripts/evaluate_persona_graph.py`
+
+校验规则：
+
+- 每个人必须有 `persona_graph`。
+- 中文展示名必填。
+- 用户可见字段不得依赖英文名。
+- 每个核心主张必须有来源。
+- 每个心智模型必须有边界。
+- 每个动作必须有触发条件和审计字段。
+- 每个常驻席位必须有 eval case。
+- 误用边界不能为空。
+
+#### 阶段 4：重构匹配与触发逻辑
+
+修改：
+
+- `scripts/ontology_matcher.py`
+
+从旧逻辑：
+
+> material signal -> persona yaml -> rule hit
+
+升级为：
+
+> material signal -> persona graph -> claim/model/boundary/action/relation hits
+
+输出里要包含：
+
+- `persona_graph_refs`
+- `claim_hits`
+- `mental_model_hits`
+- `boundary_hits`
+- `counter_test_hits`
+- `action_triggers`
+- `relation_conflicts`
+- `selection_trace`
+
+#### 阶段 5：建议书生成链路
+
+修改：
+
+- `scripts/super_board_run.py`
+- `templates/board-memo.md`
+- `web/server.py`
+
+建议书必须展示：
+
+- 本次参与席位。
+- 每个席位的中文名。
+- 每个席位的代表观点。
+- 观点来源于哪个规则或心智模型。
+- 支持证据。
+- 证据缺口。
+- 反证实验。
+- 本体边界提示。
+
+禁止输出：
+
+- 「某某本人认为」。
+- 未触发人物。
+- 英文展示名。
+- 没有证据绑定的人物观点。
+- 把哲学人物直接套成商业结论。
+
+#### 阶段 6：视觉报告升级
+
+修改：
+
+- `scripts/visual_report_builder.py`
+- `schemas/visual_report.schema.json`
+- `web/src/App.tsx`
+
+视觉报告新增：
+
+- 人物观点卡。
+- 图谱命中卡。
+- 模型比较卡。
+- 动作审计卡。
+- 本体边界卡。
+
+卡片不新增事实，只复用建议书和 record 中已有的结构化字段。
+
+#### 阶段 7：测试与 Harness
+
+新增测试：
+
+- `tests/test_persona_graph_schema.py`
+- `tests/test_persona_graph_loader.py`
+- `tests/test_ontology_matcher_graph.py`
+- `tests/test_persona_graph_governance.py`
+- `tests/test_persona_actions.py`
+- `tests/test_persona_action_audit.py`
+- `tests/test_compile_persona_prompt.py`
+
+新增 golden cases：
+
+- `tests/golden/product_decision.persona_graph.json`
+- `tests/golden/business_strategy.persona_graph.json`
+- `tests/golden/misuse_guardrail.persona_graph.json`
+- `tests/golden/philosophy_boundary.persona_graph.json`
+
+新增 Harness task：
+
+- `.harness/tasks/persona_graph_validation.yaml`
+- `.harness/tasks/persona_graph_quality.yaml`
+
+验证命令：
+
+```bash
+python3 scripts/validate_skill.py
+python3 scripts/validate_ontology.py
+python3 scripts/validate_persona_graph.py
+python3 scripts/evaluate_ontology_quality.py
+python3 scripts/evaluate_persona_graph.py
+uv run python .harness/harness_check.py
+uv run python .harness/harness_eval.py
+cd web && npm run build
+```
+
+## Q29：针对这份计划和参考文件，结合市面上的成功经验，接下来的实施计划还有没有需要补充的想法或建议？
+
+有，需要补充 8 个方向。
+
+### 1. 来源优先，而不是人物优先
+
+NotebookLM、Perplexity 这类产品给人的启发是：用户信任不是来自「AI 很会说」，而是来自「我能看到依据」。
+
+所以 Super Board 不能只展示名人观点。
+
+应该优先展示：
+
+- 这个观点来自哪类公开材料。
+- 证据强度如何。
+- 哪些内容只是推断。
+- 哪些是假设。
+- 哪些需要验证。
+
+人物本体只是透镜，证据链才是信任基础。
+
+### 2. 增加身份治理层
+
+Delphi 这类数字分身产品的方向是把人做成可对话的 digital twin。
+
+但 Super Board 不应该走这个方向。
+
+原因：
+
+- 我们没有人物授权。
+- 我们不是在复制一个人。
+- 我们做的是公开材料抽象出的决策框架。
+
+所以必须有 `ontology_contract`：
+
+- 不声称代表人物本人。
+- 不生成直接引语。
+- 不使用未授权口吻。
+- 只输出「某某视角下」。
+- 所有观点必须是抽象判断，不是人格扮演。
+
+### 3. 增加 Action 层
+
+Palantir AIP 的经验是：本体不是信息展示，而是驱动动作。
+
+Super Board 里的人物本体也应该能触发动作。
+
+例如：
+
+- 张小龙视角触发「删减功能」动作。
+- 巴菲特视角触发「现金流与护城河证据」动作。
+- 孙子视角触发「先胜后战条件检查」动作。
+- 老子视角触发「降低干预强度」动作。
+- 毛泽东视角触发「主要矛盾与群众路线验证」动作。
+
+这些动作要进入建议书，而不是只停留在人物卡片里。
+
+### 4. 增加董事会周期
+
+Board Intelligence 这类董事会产品的启发是：董事会不是一次性报告，而是一整套 board cycle。
+
+Super Board 也应该从「生成建议书」进化为：
+
+- 会前材料。
+- 审议建议书。
+- 决策记录。
+- 30 / 60 / 90 天复盘。
+- 假设校准。
+- 下次审议继承。
+
+这会让本体人物有机会被校准，而不是每次重新开始。
+
+### 5. 人物质量等级
+
+每个人物应该有 `quality_level`。
+
+不是所有人物都同等适合所有问题。
+
+建议分为：
+
+- `core`：资料厚、框架稳定、案例丰富。
+- `limited`：适合特定主题，但不能泛化。
+- `contextual`：只在特定议题触发。
+- `experimental`：需要更多验证。
+
+建议书默认只展示已触发且质量等级足够的人。
+
+### 6. 反共识保护
+
+Peter Thiel 这类人物不应被排除，而应被严格约束。
+
+正确处理方式不是「不用」，而是：
+
+- 只在非共识机会、平台垄断、秘密发现、品类重构等问题触发。
+- 必须绑定客户证据、市场证据或结构性优势证据。
+- 必须有可执行反证实验。
+- 不允许输出不可证伪的聪明判断。
+
+也就是说，保留反共识能力，但不给它无限权力。
+
+### 7. 建议书可解释层
+
+用户不只想看结论，还想知道：
+
+- 哪些人参与了讨论。
+- 他们为什么被触发。
+- 他们基于什么证据说话。
+- 他们之间哪里冲突。
+- 最终建议为什么选择这一边。
+
+所以建议书里应该有：
+
+- 本次参与席位。
+- 人物观点。
+- 关键分歧。
+- 分歧解决原则。
+- 证据缺口。
+- 反证路径。
+
+### 8. 专门评测集
+
+不要只测 schema。
+
+还要有业务评测：
+
+- 产品决策。
+- 商业策略。
+- 组织与执行。
+- 哲学边界。
+- 误用防护。
+
+每个评测都要看：
+
+- 是否触发正确人物。
+- 是否没有触发不相关人物。
+- 是否输出中文名。
+- 是否引用证据。
+- 是否给出反证实验。
+- 是否避免伪装本人。
+
+## Q30：结合这些建议，重新整理后的详细落地实施计划是什么？
+
+重新整理后的计划是：
+
+> Super Board 人物本体 v3：人物认知图谱 + 来源证据 + 动作治理 + 反证校准 + 决策复盘。
+
+### 阶段 0：计划边界
+
+明确：
+
+- 本轮不是补字段，而是重构人物本体层。
+- 本轮不是新增名人，而是把现有人物全部升级为本体图谱。
+- 本轮不是数字人产品，而是决策审议系统。
+- 本轮不新增外部模型调用。
+- 本轮不上传敏感材料。
+
+产物：
+
+- `PLANS.md`
+- `.harness/current_sprint.md`
+- `logs/execution_stream.log`
+
+### 阶段 1：schema 层
+
+新增：
+
+- `persona_graph.schema.json`
+- `persona_source.schema.json`
+- `persona_eval_case.schema.json`
+- `persona_relation.schema.json`
+
+目标：
+
+- 先定义契约，再填数据。
+- 所有后续脚本、Web、建议书都不能各自发明格式。
+
+### 阶段 2：全量人物图谱
+
+为全部人物生成 `ontology/persona_graphs/*.json`。
+
+每个人至少具备：
+
+- 身份边界。
+- 来源摘要。
+- 核心主张。
+- 心智模型。
+- 启发式。
+- 历史案例。
+- 行动建议。
+- 反证实验。
+- 误用防护。
+- 评估用例。
+
+### 阶段 3：治理层
+
+加入：
+
+- `ontology_contract`
+- `quality_level`
+- `source_strength`
+- `misuse_guardrails`
+- `action_audit`
+- `version_log`
+
+目的：
+
+- 防止名人效应变成伪权威。
+- 防止哲学人物被乱用。
+- 防止反共识人物输出不可证伪判断。
+
+### 阶段 4：匹配层
+
+重构：
+
+- `scripts/ontology_matcher.py`
+
+输出从旧的 rule hits 升级成 graph hits：
+
+- 人物命中。
+- 主张命中。
+- 心智模型命中。
+- 边界命中。
+- 反证命中。
+- 动作命中。
+- 人物关系和分歧命中。
+
+### 阶段 5：建议书层
+
+建议书必须能回答：
+
+- 谁参与了讨论。
+- 为什么是这些人。
+- 每个人说了什么。
+- 哪些观点互相冲突。
+- 哪些证据支持。
+- 哪些证据不足。
+- 如何反证。
+- 最终建议如何权衡。
+
+### 阶段 6：视觉报告层
+
+视觉报告不重新生成事实，只把同一份 record 变成卡片：
+
+- 决策摘要卡。
+- 委员会卡。
+- 人物观点卡。
+- 本体规则卡。
+- 证据卡。
+- 假设卡。
+- 行动审计卡。
+- 30 / 60 / 90 天时间线。
+
+### 阶段 7：Web API
+
+接口要返回：
+
+- `persona_graph_refs`
+- `selected_seats`
+- `seat_viewpoints`
+- `graph_rule_hits`
+- `action_triggers`
+- `visual_report`
+
+前端只展示本次触发内容，不展示未启用席位。
+
+### 阶段 8：测试
+
+测试不仅验证能不能跑，还要验证质量：
+
+- 人物图谱 schema 合法。
+- 中文展示名完整。
+- 英文名不进入用户可见报告。
+- 所有人物都有来源、边界、反证。
+- 人物观点必须绑定证据。
+- 视觉报告不新增事实。
+- 误用场景能被挡住。
+
+### 阶段 9：Golden Cases
+
+用固定材料测试：
+
+- 产品决策。
+- 商业策略。
+- 误用防护。
+- 哲学边界。
+
+每个 case 都要求：
+
+- 触发正确人物。
+- 不触发无关人物。
+- 输出结构完整。
+- 证据与反证完整。
+
+### 阶段 10：全量验收
+
+验收命令：
+
+```bash
+python3 scripts/validate_skill.py
+python3 scripts/validate_ontology.py
+python3 scripts/validate_persona_graph.py
+python3 scripts/evaluate_ontology_quality.py
+python3 scripts/evaluate_persona_graph.py
+python3 -m unittest tests/test_validate_skill.py tests/test_validate_ontology.py tests/test_persona_display_names.py tests/test_seat_view_selector.py tests/test_visual_report_builder.py
+python3 -m unittest tests/test_persona_graph_schema.py tests/test_persona_graph_loader.py tests/test_ontology_matcher_graph.py tests/test_persona_graph_governance.py tests/test_persona_actions.py tests/test_persona_action_audit.py tests/test_compile_persona_prompt.py
+uv run python .harness/harness_check.py
+uv run python .harness/harness_eval.py
+cd web && npm run build
+```
+
+## Q31：基于这个计划，如何开发落地？每一步干什么，如何达到最终目标？不要遗忘 Harness 和 Superpowers。
+
+开发顺序应该是从底层契约往上做。
+
+### 第 1 步：冻结现状
+
+先看：
+
+- `PLANS.md`
+- `ARCHITECTURE.md`
+- `README.md`
+- `docs/harness-summary.md`
+- `docs/harness-superpowers.md`
+- 现有 ontology 文件。
+- 现有建议书生成链路。
+- 现有 Web API。
+
+目的：
+
+- 不凭印象改。
+- 不破坏当前能生成建议书的链路。
+- 明确哪些文件是旧本体、哪些文件是新图谱。
+
+### 第 2 步：写计划
+
+更新：
+
+- `PLANS.md`
+- `.harness/current_sprint.md`
+
+使用 Superpowers：
+
+- `writing-plans`
+
+目的：
+
+- 把目标、非目标、验证命令写清楚。
+- 防止实施中途发散。
+
+### 第 3 步：先写 schema 和失败测试
+
+新增 schema 后，先写测试：
+
+- schema 必填字段缺失会失败。
+- 来源为空会失败。
+- 没有误用边界会失败。
+- 没有 eval case 会失败。
+- 用户可见展示名不是中文会失败。
+
+使用 Superpowers：
+
+- `test-driven-development`
+
+目的：
+
+- 先让质量门槛变成程序约束。
+- 再填数据。
+
+### 第 4 步：生成全量人物图谱
+
+为全部人物补齐：
+
+- `sources`
+- `claims`
+- `mental_models`
+- `heuristics`
+- `historical_decisions`
+- `episodes`
+- `expression_patterns`
+- `boundaries`
+- `contradictions`
+- `actions`
+- `relations`
+- `eval_cases`
+
+这里不是写漂亮介绍，而是写可运行字段。
+
+### 第 5 步：loader 与 validator
+
+新增：
+
+- `persona_graph_loader.py`
+- `validate_persona_graph.py`
+- `evaluate_persona_graph.py`
+
+目的：
+
+- 所有后续逻辑只通过 loader 读取人物图谱。
+- validator 负责结构正确。
+- evaluator 负责质量最低门槛。
+
+### 第 6 步：接入 matcher
+
+修改：
+
+- `ontology_matcher.py`
+
+做到：
+
+- 材料能触发人物图谱。
+- 输出人物命中理由。
+- 输出 claim/model/boundary/action。
+- 输出人物之间的分歧关系。
+- 输出不能直接下结论的证据缺口。
+
+### 第 7 步：接入 CLI / record
+
+修改：
+
+- `super_board_run.py`
+- `schemas/decision_record.schema.json`
+
+record 中新增：
+
+- `persona_graph_refs`
+- `persona_claim_hits`
+- `persona_action_triggers`
+- `persona_model_comparisons`
+- `persona_action_audit`
+
+目的：
+
+- Web、视觉报告、复盘都从 record 读取。
+- 不让前端重新推断。
+
+### 第 8 步：接入建议书
+
+建议书新增或增强：
+
+- 本次参与席位。
+- 人物代表观点。
+- 本体规则命中。
+- 证据缺口。
+- 人物分歧。
+- 分歧解决原则。
+- 反证实验。
+- 动作建议。
+
+质量要求：
+
+- 只展示本次启用人物。
+- 只展示中文名。
+- 不把人物写成实时发言。
+- 不新增没有来源的名人观点。
+
+### 第 9 步：接入视觉报告
+
+视觉报告显示：
+
+- 人物观点卡。
+- 本体规则卡。
+- 模型比较卡。
+- 动作审计卡。
+- 证据卡。
+- 假设卡。
+
+目的：
+
+- 管理层扫读。
+- 一眼看到谁参与、观点是什么、证据在哪里、下一步做什么。
+
+### 第 10 步：Web 接入
+
+修改：
+
+- `web/server.py`
+- `web/src/App.tsx`
+
+Web 要做到：
+
+- 生成建议书时带出人物图谱命中。
+- 视觉版展示人物卡。
+- 正文版展示完整内容。
+- 未配置模型时给清晰状态。
+- 生成中有明确状态。
+
+### 第 11 步：Harness 验证
+
+新增或扩展 Harness task：
+
+- 人物图谱合法性。
+- 人物图谱质量。
+- 建议书完整性。
+- Web 视觉报告完整性。
+
+执行：
+
+```bash
+uv run python .harness/harness_check.py
+uv run python .harness/harness_eval.py
+```
+
+### 第 12 步：完成前验证
+
+使用 Superpowers：
+
+- `verification-before-completion`
+
+必须重新跑：
+
+- validator。
+- Python 单测。
+- Harness。
+- Web build。
+- 浏览器 smoke。
+
+没有跑过的不能说完成。
+
+## Q32：特别是人物本体论这块，基于参考文件，优化部分还有遗漏吗？
+
+有几个遗漏需要补上。
+
+已经覆盖的部分包括：
+
+- 人物从 YAML 规则升级为 `persona_graph`。
+- 观点绑定 `claim_id`、`model_id`、`source_id`、`boundary_id`、`counter_test_id`。
+- 增加身份边界，避免声称数字本人。
+- 增加动作层。
+- 增加 eval 与版本。
+- 建议书只展示本次参与人物。
+- 用户可见只展示中文名。
+- Harness 与 TDD。
+
+但参考 Palantir 式本体数字分身文档后，还应该补这些：
+
+### 1. Decision / Episode 层
+
+人物本体不能只有抽象观点，还应该有历史情境。
+
+需要补：
+
+- `historical_decisions`
+- `episodes`
+
+目的：
+
+- 让观点有具体场景。
+- 防止把抽象原则无限泛化。
+
+### 2. Expression Pattern
+
+可以记录表达模式，但只能受限使用。
+
+原因：
+
+- 表达模式有助于把观点写得更有辨识度。
+- 但不能变成模仿本人。
+
+所以要加约束：
+
+- 不生成直接引语。
+- 不声称本人说过。
+- 只作为结构化表达的参考。
+
+### 3. Relation 图谱层
+
+人物之间不是孤立的。
+
+要写出：
+
+- 谁与谁互补。
+- 谁与谁冲突。
+- 谁适合反证谁。
+- 谁适合做长期视角。
+- 谁适合做执行视角。
+
+这样建议书才能写出「分歧解决」，而不是把观点平铺。
+
+### 4. Ontology Contract 独立层
+
+需要把人物使用边界独立成契约。
+
+例如：
+
+- 不是本人。
+- 不是授权代理。
+- 不输出私人信息。
+- 不输出直接引语。
+- 不在证据不足时输出强判断。
+
+### 5. 增量更新状态
+
+人物本体应该有：
+
+- `ontology_updates`
+- `version_log`
+- `last_reviewed_at`
+- `quality_notes`
+
+这方便后续持续进化。
+
+### 6. Skill Compiler 对应物
+
+需要一个把人物图谱编译成 prompt 片段的脚本。
+
+新增：
+
+- `scripts/compile_persona_prompt.py`
+
+目的：
+
+- 避免每个调用链自己拼 prompt。
+- 统一人物观点、边界、动作、反证格式。
+
+### 7. 动作审计
+
+如果人物本体触发了动作，必须能审计：
+
+- 触发原因。
+- 输入证据。
+- 输出动作。
+- 风险等级。
+- 是否进入建议书。
+
+新增：
+
+- `scripts/persona_action_audit.py`
+
+### 8. 人物之间模型比较
+
+建议书不应只显示「A 认为、B 认为」。
+
+还要显示：
+
+- 哪些模型支持 Go。
+- 哪些模型要求 Pivot。
+- 哪些模型要求 No-Go。
+- 分歧点是什么。
+- 需要什么证据裁决。
+
+### 9. 未来数字分身边界
+
+参考文档讨论的是数字分身，但 Super Board 当前不做这个。
+
+可以保留未来边界：
+
+- 如果未来要做某个真实人物的授权数字分身，必须另走授权、来源、人格边界、审计、撤回机制。
+- 不能混进当前 Super Board。
+
+## Q33：补充遗漏后，重新生成的详细步骤落地实施计划是什么？
+
+最终计划按 14 个阶段执行。
+
+### 阶段 0：计划与基线
+
+- 读取 `README.md`、`ARCHITECTURE.md`、`PLANS.md`、Harness 文档。
+- 更新 `PLANS.md`。
+- 更新 `.harness/current_sprint.md`。
+- 记录执行开始。
+
+目标：
+
+- 明确「全量人物图谱重构」。
+- 保护原有建议书生成链路。
+- 保证每一步可验证。
+
+### 阶段 1：schema 契约
+
+新增：
+
+- `persona_graph.schema.json`
+- `persona_source.schema.json`
+- `persona_eval_case.schema.json`
+- `persona_relation.schema.json`
+
+覆盖：
+
+- 人物。
+- 来源。
+- 主张。
+- 心智模型。
+- 历史决策。
+- 情境片段。
+- 表达模式。
+- 边界。
+- 动作。
+- 关系。
+- 评估用例。
+
+### 阶段 2：加载器与校验器
+
+新增：
+
+- `persona_graph_loader.py`
+- `validate_persona_graph.py`
+- `evaluate_persona_graph.py`
+
+目标：
+
+- 结构合法。
+- 质量达标。
+- 业务字段完整。
+
+### 阶段 3：全量人物图谱
+
+生成所有人物的图谱文件。
+
+每个人都要有：
+
+- 中文名。
+- 内部英文名。
+- 常驻或触发类型。
+- 委员会归属。
+- 来源摘要。
+- 核心主张。
+- 心智模型。
+- 启发式。
+- 历史案例。
+- 边界。
+- 反证。
+- 动作。
+- 关系。
+- eval case。
+
+### 阶段 4：动作层与审计
+
+新增：
+
+- `persona_actions.py`
+- `persona_action_audit.py`
+
+动作包括：
+
+- 补证据。
+- 降级建议。
+- 要求反证。
+- 进入观察。
+- 转成检查点。
+- 提醒误用风险。
+
+### 阶段 5：匹配器升级
+
+修改：
+
+- `ontology_matcher.py`
+
+输出：
+
+- `persona_graph_refs`
+- `claim_hits`
+- `mental_model_hits`
+- `boundary_hits`
+- `counter_test_hits`
+- `action_triggers`
+- `model_comparisons`
+- `selection_trace`
+
+### 阶段 6：Prompt Compiler
+
+新增：
+
+- `compile_persona_prompt.py`
+
+功能：
+
+- 把人物图谱编译成模型可用的 prompt 片段。
+- 统一格式。
+- 强制中文展示名。
+- 强制身份边界。
+- 强制证据与反证。
+
+### 阶段 7：record 与 CLI
+
+修改：
+
+- `schemas/decision_record.schema.json`
+- `scripts/super_board_run.py`
+
+record 需要保存：
+
+- 参与人物。
+- 图谱引用。
+- 规则命中。
+- 动作命中。
+- 人物分歧。
+- 证据缺口。
+- 反证实验。
+
+### 阶段 8：建议书模板
+
+修改：
+
+- `templates/board-memo.md`
+
+新增或强化：
+
+- 本次审议席位。
+- 席位代表观点。
+- 人物本体规则命中。
+- 跨委员会分歧。
+- 分歧解决原则。
+- 反证路径。
+- 本体边界提示。
+
+### 阶段 9：视觉报告
+
+修改：
+
+- `scripts/visual_report_builder.py`
+- `schemas/visual_report.schema.json`
+- `web/src/App.tsx`
+
+新增：
+
+- 人物观点卡。
+- 图谱规则卡。
+- 模型比较卡。
+- 动作审计卡。
+
+### 阶段 10：Web API
+
+修改：
+
+- `web/server.py`
+
+接口输出：
+
+- 正文建议书。
+- 视觉报告。
+- 人物图谱命中。
+- 动作审计。
+- 本体规则卡。
+
+### 阶段 11：Golden Cases
+
+新增：
+
+- 产品决策 case。
+- 商业策略 case。
+- 误用防护 case。
+- 哲学边界 case。
+
+目标：
+
+- 验证触发是否合理。
+- 验证哲学人物是否被商业化转译。
+- 验证反共识人物是否被证据门槛约束。
+
+### 阶段 12：Harness
+
+新增：
+
+- `persona_graph_validation.yaml`
+- `persona_graph_quality.yaml`
+
+运行：
+
+```bash
+uv run python .harness/harness_check.py
+uv run python .harness/harness_eval.py
+```
+
+### 阶段 13：浏览器 smoke
+
+验证：
+
+- 上传材料。
+- 生成建议书。
+- 正文版完整。
+- 视觉版完整。
+- 人物观点出现。
+- 不展示未启用人物。
+- 不展示英文名。
+- 导出可用。
+
+### 阶段 14：提交策略
+
+建议拆分：
+
+1. schema 与 graph loader。
+2. 全量人物图谱。
+3. matcher / CLI / record。
+4. 建议书与视觉报告。
+5. Web 与 Harness。
+
+每个 commit 前都跑对应测试。
+
+## Q34：批准，开始执行后，实际完成了哪些改动？
+
+已按上述计划执行落地。
+
+### 已新增的人物图谱
+
+新增：
+
+- `ontology/persona_graphs/*.json`
+
+覆盖 37 个人物图谱。
+
+每个人物图谱包含：
+
+- 中文展示名。
+- 内部英文名。
+- 委员会归属。
+- 常驻或触发专家属性。
+- 来源摘要。
+- 核心主张。
+- 心智模型。
+- 历史案例。
+- 情境片段。
+- 表达模式约束。
+- 误用边界。
+- 反证实验。
+- 行动触发。
+- 人物关系。
+- 评估用例。
+- 版本记录。
+
+### 已新增 schema
+
+新增：
+
+- `ontology/schemas/persona_graph.schema.json`
+- `ontology/schemas/persona_source.schema.json`
+- `ontology/schemas/persona_eval_case.schema.json`
+- `ontology/schemas/persona_relation.schema.json`
+
+扩展：
+
+- `schemas/decision_record.schema.json`
+- `schemas/visual_report.schema.json`
+
+### 已新增脚本
+
+新增：
+
+- `scripts/persona_graph_loader.py`
+- `scripts/validate_persona_graph.py`
+- `scripts/evaluate_persona_graph.py`
+- `scripts/generate_persona_graphs.py`
+- `scripts/persona_actions.py`
+- `scripts/persona_action_audit.py`
+- `scripts/compile_persona_prompt.py`
+- `scripts/suggest_ontology_updates.py`
+
+### 已修改生成链路
+
+修改：
+
+- `scripts/ontology_matcher.py`
+- `scripts/super_board_run.py`
+- `scripts/visual_report_builder.py`
+- `scripts/validate_skill.py`
+- `web/server.py`
+- `web/src/App.tsx`
+
+接入内容包括：
+
+- `persona_graph_refs`
+- 人物图谱命中。
+- 动作触发。
+- 行动审计。
+- 模型比较。
+- 视觉报告人物卡片。
+- record 结构扩展。
+
+### 已新增测试
+
+新增：
+
+- `tests/test_persona_graph_schema.py`
+- `tests/test_persona_graph_loader.py`
+- `tests/test_ontology_matcher_graph.py`
+- `tests/test_persona_graph_governance.py`
+- `tests/test_persona_actions.py`
+- `tests/test_persona_action_audit.py`
+- `tests/test_compile_persona_prompt.py`
+
+新增 golden：
+
+- `tests/golden/product_decision.persona_graph.json`
+- `tests/golden/business_strategy.persona_graph.json`
+- `tests/golden/misuse_guardrail.persona_graph.json`
+- `tests/golden/philosophy_boundary.persona_graph.json`
+
+扩展：
+
+- `tests/test_visual_report_builder.py`
+
+### 已新增 Harness 任务
+
+新增：
+
+- `.harness/tasks/persona_graph_validation.yaml`
+- `.harness/tasks/persona_graph_quality.yaml`
+
+### 已完成验证
+
+已通过：
+
+```bash
+python3 scripts/validate_skill.py
+python3 scripts/validate_ontology.py
+python3 scripts/validate_persona_graph.py
+python3 scripts/evaluate_ontology_quality.py
+python3 scripts/evaluate_persona_graph.py
+python3 -m unittest tests/test_validate_skill.py tests/test_validate_ontology.py tests/test_persona_display_names.py tests/test_seat_view_selector.py tests/test_visual_report_builder.py
+python3 -m unittest tests/test_persona_graph_schema.py tests/test_persona_graph_loader.py tests/test_ontology_matcher_graph.py tests/test_persona_graph_governance.py tests/test_persona_actions.py tests/test_persona_action_audit.py tests/test_compile_persona_prompt.py
+uv run python .harness/harness_check.py
+uv run python .harness/harness_eval.py
+cd web && npm run build
+```
+
+浏览器 smoke 也完成过验证：
+
+- `/api/preview` 返回 `ok: true`。
+- `visual_report` 存在。
+- `selectedSeats` 为 10。
+- `personaGraphRefs` 为 25。
+- `visualGraphCards` 为 8。
+- `modelComparisonCards` 为 8。
+- `actionAuditCards` 为 8。
+- `markdownHasGraph` 为 true。
+
+### 当前仍需注意的边界
+
+- 这仍然不是「数字本人」。
+- 人物观点只能写成「某某视角下」。
+- 不展示未启用人物。
+- 用户可见名称必须是中文名。
+- 视觉报告只做结构提炼，不新增事实。
+- 真实 records 仍不应提交。

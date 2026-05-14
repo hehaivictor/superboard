@@ -46,6 +46,9 @@ class VisualReportBuilderTests(unittest.TestCase):
         for field in [
             "hero",
             "seat_view_cards",
+            "persona_graph_cards",
+            "model_comparison_cards",
+            "action_audit_cards",
             "decision_cards",
             "committee_cards",
             "ontology_cards",
@@ -64,6 +67,9 @@ class VisualReportBuilderTests(unittest.TestCase):
 
         self.assertEqual(record["decision_id"], report["hero"]["decision_id"])
         self.assertGreaterEqual(len(report["seat_view_cards"]), 7)
+        self.assertGreaterEqual(len(report["persona_graph_cards"]), 7)
+        self.assertGreaterEqual(len(report["model_comparison_cards"]), 7)
+        self.assertGreaterEqual(len(report["action_audit_cards"]), 7)
         self.assertGreaterEqual(len(report["decision_cards"]), 4)
         self.assertGreaterEqual(len(report["committee_cards"]), 7)
         self.assertGreaterEqual(len(report["ontology_cards"]), 4)

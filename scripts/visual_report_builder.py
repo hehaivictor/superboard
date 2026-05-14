@@ -339,6 +339,71 @@ def build_ontology_cards(record: dict[str, Any], limit: int = 8) -> list[dict[st
     return cards
 
 
+def build_persona_graph_cards(record: dict[str, Any], limit: int = 8) -> list[dict[str, Any]]:
+    cards: list[dict[str, Any]] = []
+    for index, ref in enumerate(as_dict_list(record.get("persona_graph_refs"))[:limit], start=1):
+        source_ids = "、".join(as_string_list(ref.get("source_ids"))) or "未记录"
+        body = (
+            f"主张：{ref.get('claim_id', '未记录')}；模型：{ref.get('model_id', '未记录')}；"
+            f"边界：{ref.get('boundary_id', '未记录')}；反证：{ref.get('counter_test_id', '未记录')}；"
+            f"来源：{source_ids}。"
+        )
+        cards.append(
+            make_card(
+                f"persona-graph-{index:02d}",
+                str(ref.get("display_name") or ref.get("persona_id") or f"人物本体 {index}"),
+                body,
+                "violet",
+                ["persona_graph_refs"],
+                value=str(ref.get("persona_id", "")),
+                badges=["图谱引用"],
+            )
+        )
+    return cards
+
+
+def build_model_comparison_cards(record: dict[str, Any], limit: int = 8) -> list[dict[str, Any]]:
+    cards: list[dict[str, Any]] = []
+    for index, item in enumerate(as_dict_list(record.get("model_comparisons"))[:limit], start=1):
+        body = (
+            f"制衡对象：{item.get('with_persona_id', '未记录')}。"
+            f"共识：{item.get('common_ground', '未记录')}。"
+            f"张力：{item.get('key_tension', '未记录')}。"
+        )
+        cards.append(
+            make_card(
+                f"model-comparison-{index:02d}",
+                str(item.get("display_name") or item.get("persona_id") or f"模型制衡 {index}"),
+                body,
+                "amber",
+                ["model_comparisons"],
+                value="制衡关系",
+            )
+        )
+    return cards
+
+
+def build_action_audit_cards(record: dict[str, Any], limit: int = 8) -> list[dict[str, Any]]:
+    cards: list[dict[str, Any]] = []
+    for index, item in enumerate(as_dict_list(record.get("action_audit"))[:limit], start=1):
+        body = (
+            f"动作：{item.get('action', '未记录')}。"
+            f"输入：{item.get('input_summary', '未记录')}。"
+            f"输出：{item.get('output_summary', '未记录')}。"
+        )
+        cards.append(
+            make_card(
+                f"action-audit-{index:02d}",
+                str(item.get("persona_id") or f"动作审计 {index}"),
+                body,
+                "slate",
+                ["action_audit"],
+                value=str(item.get("audit_id", "")),
+            )
+        )
+    return cards
+
+
 def build_evidence_cards(record: dict[str, Any], limit: int = 6) -> list[dict[str, Any]]:
     cards: list[dict[str, Any]] = []
     for index, evidence in enumerate(as_dict_list(record.get("evidence_packets"))[:limit], start=1):
@@ -478,6 +543,9 @@ def build_visual_report(record: dict[str, Any], board_memo: str) -> dict[str, An
         "seat_view_cards": build_seat_view_cards(record),
         "decision_cards": build_decision_cards(record, board_memo),
         "committee_cards": build_committee_cards(record),
+        "persona_graph_cards": build_persona_graph_cards(record),
+        "model_comparison_cards": build_model_comparison_cards(record),
+        "action_audit_cards": build_action_audit_cards(record),
         "ontology_cards": build_ontology_cards(record),
         "evidence_cards": build_evidence_cards(record),
         "assumption_cards": build_assumption_cards(record),
@@ -546,6 +614,9 @@ def render_visual_report_markdown(report: dict[str, Any]) -> str:
             f"- 证据口径：{hero.get('material_file_count', 0)} 个材料文件，{hero.get('source_block_count', 0)} 个可引用来源块",
             "",
             *render_group("本次参与席位", report.get("seat_view_cards")),
+            *render_group("人物本体图谱", report.get("persona_graph_cards")),
+            *render_group("模型制衡关系", report.get("model_comparison_cards")),
+            *render_group("动作审计", report.get("action_audit_cards")),
             *render_group("决策摘要卡片", report.get("decision_cards")),
             *render_group("委员会卡片", report.get("committee_cards")),
             *render_group("AI 洞察", report.get("insight_cards")),

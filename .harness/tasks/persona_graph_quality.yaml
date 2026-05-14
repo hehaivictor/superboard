@@ -1,0 +1,8 @@
+id: persona_graph_quality
+name: 人物本体治理质量评测
+command: python3 scripts/evaluate_persona_graph.py
+success_criteria:
+  - 人物图谱禁止伪原话、私人记忆和本人冒充
+  - 强观点存在制衡席位和反证机制
+  - 哲学与历史人物保留现代商业证据边界
+  - Golden cases 覆盖产品、商业、误用和哲学边界场景

@@ -1,0 +1,8 @@
+id: persona_graph_validation
+name: 人物本体图谱校验
+command: python3 scripts/validate_persona_graph.py
+success_criteria:
+  - 37 个人物全部存在 persona graph
+  - 每个人物具备对象、关系、动作、证据、边界和演化记录
+  - 每条规则能追溯 claim、model、source、boundary 和 counter test
+  - 所有人物面向用户展示中文名

@@ -8,6 +8,9 @@
     "schema_version",
     "hero",
     "seat_view_cards",
+    "persona_graph_cards",
+    "model_comparison_cards",
+    "action_audit_cards",
     "decision_cards",
     "committee_cards",
     "ontology_cards",
@@ -68,6 +71,24 @@
       "additionalProperties": true
     },
     "seat_view_cards": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/card"
+      }
+    },
+    "persona_graph_cards": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/card"
+      }
+    },
+    "model_comparison_cards": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/card"
+      }
+    },
+    "action_audit_cards": {
       "type": "array",
       "items": {
         "$ref": "#/$defs/card"
@@ -158,12 +179,6 @@
           }
         },
         "additionalProperties": true
-      }
-    },
-    "seat_view_cards": {
-      "type": "array",
-      "items": {
-        "$ref": "#/$defs/card"
       }
     }
   },

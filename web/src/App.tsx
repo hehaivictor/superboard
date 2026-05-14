@@ -41,6 +41,10 @@ type Preview = {
   ontology_trace?: OntologyTraceHit[];
   ontology_rule_hits?: OntologyRuleHit[];
   committee_rule_matrix?: CommitteeRuleMatrix[];
+  persona_graph_refs?: Array<Record<string, unknown>>;
+  model_comparisons?: Array<Record<string, unknown>>;
+  action_audit?: Array<Record<string, unknown>>;
+  governance_checks?: string[];
   material_pack?: MaterialPack;
   review_run?: ReviewRun;
   action_items?: Array<Record<string, unknown>>;
@@ -87,6 +91,9 @@ type VisualReport = {
   schema_version: string;
   hero: VisualHero;
   seat_view_cards: VisualCard[];
+  persona_graph_cards: VisualCard[];
+  model_comparison_cards: VisualCard[];
+  action_audit_cards: VisualCard[];
   decision_cards: VisualCard[];
   committee_cards: VisualCard[];
   ontology_cards: VisualCard[];
@@ -250,6 +257,16 @@ const fieldLabels: Record<string, string> = {
   selected_seats: "本次审议席位",
   seat_viewpoints: "席位代表观点",
   seat_selection_trace: "席位选择轨迹",
+  persona_graph_refs: "人物图谱引用",
+  model_comparisons: "模型制衡关系",
+  action_audit: "动作审计",
+  governance_checks: "治理检查",
+  claim_id: "主张编号",
+  model_id: "模型编号",
+  source_ids: "来源编号",
+  boundary_id: "边界编号",
+  counter_test_id: "反证编号",
+  relation_ids: "关系编号",
   display_name: "显示名称",
   committee_name: "委员会名称",
   selection_reason: "入选原因",
@@ -603,6 +620,9 @@ function VisualReportView({ report }: { report?: VisualReport }) {
 
         <VisualSection title="决策摘要卡片" cards={report.decision_cards} />
         <VisualSection title="本次参与席位" cards={report.seat_view_cards ?? []} />
+        <VisualSection title="人物本体图谱" cards={report.persona_graph_cards ?? []} />
+        <VisualSection title="模型制衡关系" cards={report.model_comparison_cards ?? []} />
+        <VisualSection title="动作审计" cards={report.action_audit_cards ?? []} />
         <VisualSection title="AI 洞察" cards={report.insight_cards} />
         <VisualSection title="委员会卡片" cards={report.committee_cards} />
         <VisualSection title="本体规则卡片" cards={report.ontology_cards.slice(0, 6)} />

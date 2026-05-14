@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://super-board.local/ontology/persona_relation.schema.json",
+  "title": "Persona Relation",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "relation_id",
+    "subject",
+    "predicate",
+    "object"
+  ],
+  "properties": {
+    "relation_id": {
+      "type": "string"
+    },
+    "subject": {
+      "type": "string"
+    },
+    "predicate": {
+      "enum": [
+        "expresses",
+        "supports",
+        "contradicts",
+        "evidences",
+        "generates",
+        "limits",
+        "tests",
+        "updates"
+      ]
+    },
+    "object": {
+      "type": "string"
+    }
+  }
+}
