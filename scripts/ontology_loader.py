@@ -9,11 +9,13 @@ from typing import Any
 
 
 COMMITTEE_LABELS = {
-    "business-leaders": "商业委员会",
-    "startup-mentors": "创业委员会",
-    "investment-masters": "投资委员会",
-    "consulting-elite": "咨询委员会",
-    "product-users": "产品委员会",
+    "business-leaders": "商业与长期价值委员会",
+    "startup-mentors": "创业与非共识机会委员会",
+    "investment-masters": "投资与风险委员会",
+    "consulting-elite": "战略与竞争委员会",
+    "product-users": "产品与用户委员会",
+    "organization-china": "组织与中国商业实践委员会",
+    "philosophy-humanities": "哲学与人文委员会",
 }
 
 

@@ -1,0 +1,7 @@
+id: persona_display_name
+name: 中文席位姓名展示
+command: python3 -m unittest tests/test_persona_display_names.py
+success_criteria:
+  - 核心席位和触发专家都有中文 display_name
+  - 本地建议书使用中文姓名
+  - 用户可见建议书不展示英文姓名

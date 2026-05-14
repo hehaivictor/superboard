@@ -38,11 +38,13 @@ DECISION_LABELS = {
 }
 
 COMMITTEE_LABELS = {
-    "business-leaders": "商业委员会",
-    "startup-mentors": "创业委员会",
-    "investment-masters": "投资委员会",
-    "consulting-elite": "咨询委员会",
-    "product-users": "产品委员会",
+    "business-leaders": "商业与长期价值委员会",
+    "startup-mentors": "创业与非共识机会委员会",
+    "investment-masters": "投资与风险委员会",
+    "consulting-elite": "战略与竞争委员会",
+    "product-users": "产品与用户委员会",
+    "organization-china": "组织与中国商业实践委员会",
+    "philosophy-humanities": "哲学与人文委员会",
     "synthetic-users": "用户模拟组",
 }
 
@@ -62,6 +64,8 @@ TONE_BY_COMMITTEE = {
     "investment-masters": "emerald",
     "consulting-elite": "cyan",
     "product-users": "rose",
+    "organization-china": "blue",
+    "philosophy-humanities": "violet",
     "synthetic-users": "blue",
 }
 
@@ -247,19 +251,31 @@ def build_decision_cards(record: dict[str, Any], board_memo: str) -> list[dict[s
 def build_committee_cards(record: dict[str, Any]) -> list[dict[str, Any]]:
     matrix = as_dict_list(record.get("committee_rule_matrix"))
     rule_hits = as_dict_list(record.get("ontology_rule_hits"))
-    cards: list[dict[str, Any]] = []
+    selected_seats = as_dict_list(record.get("selected_seats"))
+    committees = list(dict.fromkeys([str(seat.get("committee", "")) for seat in selected_seats if seat.get("committee")]))
     for group in matrix:
         committee = str(group.get("committee", ""))
-        hits = as_dict_list(group.get("rule_hits"))
+        if committee and committee not in committees:
+            committees.append(committee)
+    hits_by_committee = {str(group.get("committee", "")): as_dict_list(group.get("rule_hits")) for group in matrix}
+    cards: list[dict[str, Any]] = []
+    for committee in committees:
+        hits = hits_by_committee.get(committee, [])
         first_hit = hits[0] if hits else {}
         missing = []
         for hit in rule_hits:
             if str(hit.get("committee", "")) == committee:
                 missing.extend(as_string_list(hit.get("missing_evidence")))
         missing_text = "、".join(dict.fromkeys(missing[:3])) or "未记录额外证据缺口"
+        selected_names = "、".join(
+            str(seat.get("display_name", ""))
+            for seat in selected_seats
+            if str(seat.get("committee", "")) == committee and str(seat.get("display_name", "")).strip()
+        )
         body = (
+            f"本次代表：{selected_names or '未记录'}。"
             f"命中 {len(hits)} 条本体规则；首要规则 "
-            f"{first_hit.get('persona_id', '未记录')} / {first_hit.get('rule_id', '未记录')}。"
+            f"{first_hit.get('rule_id', '未记录')}。"
             f"优先补齐：{missing_text}。"
         )
         cards.append(
@@ -270,6 +286,31 @@ def build_committee_cards(record: dict[str, Any]) -> list[dict[str, Any]]:
                 TONE_BY_COMMITTEE.get(committee, "slate"),
                 ["committee_rule_matrix", "ontology_rule_hits.missing_evidence"],
                 value=f"{len(hits)} 条规则",
+                badges=[display_committee(committee)],
+            )
+        )
+    return cards
+
+
+def build_seat_view_cards(record: dict[str, Any]) -> list[dict[str, Any]]:
+    cards: list[dict[str, Any]] = []
+    for index, seat in enumerate(as_dict_list(record.get("selected_seats")), start=1):
+        committee = str(seat.get("committee", ""))
+        name = str(seat.get("display_name") or seat.get("persona_id") or f"席位 {index}")
+        body = (
+            f"入选原因：{seat.get('selection_reason', '未记录')}。"
+            f"证据门槛：{seat.get('evidence_basis', '未记录')}。"
+            f"反证信号：{seat.get('counter_signal', '未记录')}。"
+        )
+        cards.append(
+            make_card(
+                f"seat-{index:02d}",
+                name,
+                body,
+                TONE_BY_COMMITTEE.get(committee, "slate"),
+                ["selected_seats", "seat_viewpoints", "seat_selection_trace"],
+                value=display_committee(committee),
+                meta=str(seat.get("ontology_level", "")),
                 badges=[display_committee(committee)],
             )
         )
@@ -434,6 +475,7 @@ def build_visual_report(record: dict[str, Any], board_memo: str) -> dict[str, An
     return {
         "schema_version": SCHEMA_VERSION,
         "hero": build_hero(record),
+        "seat_view_cards": build_seat_view_cards(record),
         "decision_cards": build_decision_cards(record, board_memo),
         "committee_cards": build_committee_cards(record),
         "ontology_cards": build_ontology_cards(record),
@@ -503,6 +545,7 @@ def render_visual_report_markdown(report: dict[str, Any]) -> str:
             f"- 当前建议：{hero.get('decision_label', '')}",
             f"- 证据口径：{hero.get('material_file_count', 0)} 个材料文件，{hero.get('source_block_count', 0)} 个可引用来源块",
             "",
+            *render_group("本次参与席位", report.get("seat_view_cards")),
             *render_group("决策摘要卡片", report.get("decision_cards")),
             *render_group("委员会卡片", report.get("committee_cards")),
             *render_group("AI 洞察", report.get("insight_cards")),

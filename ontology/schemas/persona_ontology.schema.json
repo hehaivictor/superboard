@@ -16,7 +16,14 @@
     "source_map",
     "case_map",
     "not_for",
-    "calibration_notes"
+    "calibration_notes",
+    "display_name",
+    "english_name",
+    "activation",
+    "representative_viewpoints",
+    "evidence_thresholds",
+    "counter_tests",
+    "misuse_guardrails"
   ],
   "properties": {
     "persona_id": {
@@ -30,6 +37,27 @@
       ]
     },
     "decision_rules": {
+      "type": "array"
+    },
+    "display_name": {
+      "type": "string"
+    },
+    "english_name": {
+      "type": "string"
+    },
+    "activation": {
+      "type": "object"
+    },
+    "representative_viewpoints": {
+      "type": "array"
+    },
+    "evidence_thresholds": {
+      "type": "array"
+    },
+    "counter_tests": {
+      "type": "array"
+    },
+    "misuse_guardrails": {
       "type": "array"
     }
   }

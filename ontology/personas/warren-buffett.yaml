@@ -1,6 +1,6 @@
 {
   "persona_id": "warren-buffett",
-  "name": "Warren Buffett",
+  "name": "沃伦·巴菲特",
   "committee": "business-leaders",
   "ontology_level": "core",
   "source_quality": "high",
@@ -10,7 +10,12 @@
     "cashflow",
     "circle_of_competence",
     "capital_allocation",
-    "owner_mindset"
+    "owner_mindset",
+    "长期现金流与护城河",
+    "证据约束",
+    "反证实验",
+    "适用边界",
+    "商业转译"
   ],
   "decision_rules": [
     {
@@ -198,9 +203,57 @@
   "not_for": [
     "冒充人物本人发言",
     "替代法律、医疗、投资等专业意见",
-    "在无材料证据时强行给确定结论"
+    "在无材料证据时强行给确定结论",
+    "替代专业意见"
   ],
   "calibration_notes": [
-    "第一版只记录规则命中，不自动调整权重"
+    "第一版只记录规则命中，不自动调整权重",
+    "第一版只记录规则命中和席位选择，不自动调整权重"
+  ],
+  "display_name": "沃伦·巴菲特",
+  "english_name": "Warren Buffett",
+  "activation": {
+    "topics": [
+      "定价",
+      "现金流",
+      "留存",
+      "毛利"
+    ],
+    "material_signals": [
+      "定价",
+      "现金流",
+      "留存",
+      "毛利"
+    ],
+    "negative_signals": [
+      "与当前材料无关",
+      "只有名人效应但无证据",
+      "无法形成反证实验"
+    ],
+    "min_evidence": [
+      "至少一个当前来源块",
+      "至少一个可验证证据要求",
+      "至少一个反证信号"
+    ]
+  },
+  "representative_viewpoints": [
+    {
+      "lens": "长期现金流与护城河",
+      "role": "用沃伦·巴菲特视角审议当前决策，但不代表本人参与、授权或背书。",
+      "view_template": "沃伦·巴菲特视角下，当前判断必须先回答：长期现金流与护城河是否被材料证据支持。"
+    }
+  ],
+  "evidence_thresholds": [
+    "必须引用当前材料来源块",
+    "必须说明缺失证据",
+    "必须给出可执行反证信号"
+  ],
+  "counter_tests": [
+    "若客户不能持续付费或单位经济不成立，则长期价值假设降级。"
+  ],
+  "misuse_guardrails": [
+    "不得伪造人物原话",
+    "不得把人物观点压过材料证据",
+    "不得在无证据时给高置信结论"
   ]
 }

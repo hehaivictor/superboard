@@ -45,6 +45,7 @@ class VisualReportBuilderTests(unittest.TestCase):
 
         for field in [
             "hero",
+            "seat_view_cards",
             "decision_cards",
             "committee_cards",
             "ontology_cards",
@@ -62,8 +63,9 @@ class VisualReportBuilderTests(unittest.TestCase):
         report = visual_report_builder.build_visual_report(record, board_memo)
 
         self.assertEqual(record["decision_id"], report["hero"]["decision_id"])
+        self.assertGreaterEqual(len(report["seat_view_cards"]), 7)
         self.assertGreaterEqual(len(report["decision_cards"]), 4)
-        self.assertEqual(5, len(report["committee_cards"]))
+        self.assertGreaterEqual(len(report["committee_cards"]), 7)
         self.assertGreaterEqual(len(report["ontology_cards"]), 4)
         self.assertGreaterEqual(len(report["evidence_cards"]), 1)
         self.assertGreaterEqual(len(report["insight_cards"]), 3)
@@ -87,6 +89,7 @@ class VisualReportBuilderTests(unittest.TestCase):
         markdown = visual_report_builder.render_visual_report_markdown(report)
 
         self.assertIn("# 视觉版董事会建议书", markdown)
+        self.assertIn("## 本次参与席位", markdown)
         self.assertIn("## 决策摘要卡片", markdown)
         self.assertIn("## AI 洞察", markdown)
         self.assertIn("## 本体规则卡片", markdown)

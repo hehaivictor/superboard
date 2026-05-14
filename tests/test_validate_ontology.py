@@ -37,7 +37,7 @@ class OntologyValidationTests(unittest.TestCase):
         issues = validate_ontology.validate(ROOT)
         self.assertEqual([], issues)
 
-    def test_core_board_has_exactly_fifteen_core_personas(self) -> None:
+    def test_core_board_has_exactly_twenty_one_core_personas(self) -> None:
         board = validate_ontology.load_json_or_yaml(ROOT / "boards" / "default-board.yaml")
         core_ids = validate_ontology.core_persona_ids(board)
 
@@ -49,6 +49,13 @@ class OntologyValidationTests(unittest.TestCase):
         for persona_id in validate_ontology.EXPECTED_CORE_PERSONA_IDS:
             persona = personas[persona_id]
             self.assertEqual("core", persona["ontology_level"], persona_id)
+            self.assertTrue(str(persona["display_name"]).strip(), persona_id)
+            self.assertTrue(str(persona["english_name"]).strip(), persona_id)
+            self.assertIn("activation", persona, persona_id)
+            self.assertIn("representative_viewpoints", persona, persona_id)
+            self.assertIn("evidence_thresholds", persona, persona_id)
+            self.assertIn("counter_tests", persona, persona_id)
+            self.assertIn("misuse_guardrails", persona, persona_id)
             self.assertGreaterEqual(len(persona["concepts"]), 5, persona_id)
             self.assertGreaterEqual(len(persona["decision_rules"]), 5, persona_id)
             for rule in persona["decision_rules"]:
@@ -62,7 +69,7 @@ class OntologyValidationTests(unittest.TestCase):
         specialist_ids = set(validate_ontology.triggered_specialist_ids(board))
         archive_ids = set(validate_ontology.distilled_archive_ids(board))
 
-        self.assertTrue({"sam-altman", "naval-ravikant", "elon-musk", "zhang-yiming"}.issubset(specialist_ids))
+        self.assertTrue({"sam-altman", "naval-ravikant", "elon-musk", "mao-zedong", "david-ogilvy"}.issubset(specialist_ids))
         self.assertFalse(core_ids & specialist_ids)
         self.assertFalse(core_ids & archive_ids)
 
@@ -127,7 +134,7 @@ class OntologyValidationTests(unittest.TestCase):
 
         self.assertIn(("warren-buffett", "buffett_moat_cashflow_quality"), hit_ids)
         self.assertIn(("michael-porter", "porter_competitive_positioning"), hit_ids)
-        self.assertIn(("roger-martin", "martin_where_to_play_how_to_win"), hit_ids)
+        self.assertIn(("sun-tzu", "sun_tzu_advantage_positioning"), hit_ids)
         self.assertIn(("charlie-munger", "munger_incentive_misalignment"), hit_ids)
         self.assertNotIn(("sam-altman", "altman_ai_scaling"), hit_ids)
 
@@ -142,12 +149,16 @@ class OntologyValidationTests(unittest.TestCase):
 
         self.assertIn("ontology_trace", record)
         self.assertIn("ontology_rule_hits", record)
+        self.assertIn("selected_seats", record)
+        self.assertIn("seat_viewpoints", record)
+        self.assertIn("seat_selection_trace", record)
         self.assertGreaterEqual(len(record["ontology_rule_hits"]), 4)
+        self.assertGreaterEqual(len(record["selected_seats"]), 7)
 
     def test_decision_record_schema_declares_ontology_fields(self) -> None:
         schema = json.loads((ROOT / "schemas" / "decision_record.schema.json").read_text(encoding="utf-8"))
 
-        for field in ["ontology_trace", "ontology_rule_hits", "committee_rule_matrix", "triggered_specialists"]:
+        for field in ["ontology_trace", "ontology_rule_hits", "committee_rule_matrix", "triggered_specialists", "selected_seats", "seat_viewpoints", "seat_selection_trace"]:
             self.assertIn(field, schema["required"])
             self.assertIn(field, schema["properties"])
 

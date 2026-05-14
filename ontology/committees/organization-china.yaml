@@ -1,0 +1,20 @@
+{
+  "committee_id": "organization-china",
+  "name": "组织与中国商业实践委员会",
+  "core_personas": [
+    "ren-zhengfei",
+    "zhang-yiming",
+    "kazuo-inamori"
+  ],
+  "review_focus": "组织韧性、长期投入、信息效率、经营责任和中国商业实践。",
+  "representative_selection": {
+    "min_selected": 1,
+    "max_selected": 2,
+    "selection_basis": [
+      "议题适配度",
+      "本体规则命中度",
+      "材料证据覆盖度",
+      "观点差异度"
+    ]
+  }
+}

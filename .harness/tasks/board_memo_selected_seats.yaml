@@ -1,0 +1,7 @@
+id: board_memo_selected_seats
+name: 建议书席位章节
+command: python3 -m unittest tests/test_persona_display_names.py
+success_criteria:
+  - 建议书包含本次审议席位
+  - 建议书包含席位代表观点
+  - 未启用席位不写入用户可见正文

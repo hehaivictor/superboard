@@ -2,6 +2,6 @@ id: ontology_trace_golden
 name: 本体规则 golden 命中
 command: python3 scripts/evaluate_ontology_quality.py
 success_criteria:
-  - 定价策略样例命中 Buffett、Porter、Martin、Munger 的关键规则
+  - 定价策略样例命中巴菲特、波特、孙子、芒格的关键规则
   - 不把 triggered specialist 当作 core rule hit
   - 每个命中规则都有反证实验

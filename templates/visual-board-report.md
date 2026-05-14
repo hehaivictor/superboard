@@ -18,6 +18,15 @@
 - 反证路径
 - 下一步行动
 
+## 本次参与席位卡片
+
+- 席位代表中文姓名
+- 所属委员会
+- 入选原因
+- 证据门槛
+- 反证信号
+- 来源字段：`selected_seats`、`seat_viewpoints`、`seat_selection_trace`
+
 ## 委员会卡片
 
 - 各委员会的本体规则触发数量
@@ -41,7 +50,7 @@
 
 ## AI 洞察
 
-- 只复用 `record`、`board_memo`、`ontology_rule_hits`、`committee_rule_matrix`、`evidence_packets` 和 `assumptions`
+- 只复用 `record`、`board_memo`、`selected_seats`、`seat_viewpoints`、`ontology_rule_hits`、`committee_rule_matrix`、`evidence_packets` 和 `assumptions`
 - 每条洞察必须标注 `source_fields`
 - 不写外部调研结论，不补充不可追踪事实
 

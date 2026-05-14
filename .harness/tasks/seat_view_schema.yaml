@@ -1,0 +1,7 @@
+id: seat_view_schema
+name: 席位选择记录 schema 校验
+command: python3 -m unittest tests/test_validate_ontology.py
+success_criteria:
+  - 决策记录包含 selected_seats、seat_viewpoints、seat_selection_trace
+  - schema 声明席位选择字段
+  - 席位选择字段与本体规则命中共同进入 record

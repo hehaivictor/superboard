@@ -28,7 +28,17 @@ flowchart LR
   C -. "待验证" .-> F["{{workflow_key_unknown}}"]
 ```
 
-## 3. Go / No-Go / Pivot 建议
+## 3. 本次审议席位
+
+> 只列出本次实际进入审议的常驻代表和触发专家；未启用或未触发的席位不需要展示。
+
+| 委员会 | 席位代表 | 入选原因 | 证据门槛 | 反证信号 |
+|---|---|---|---|---|
+| {{seat_committee_1}} | {{seat_display_name_1}} | {{seat_reason_1}} | {{seat_evidence_basis_1}} | {{seat_counter_signal_1}} |
+| {{seat_committee_2}} | {{seat_display_name_2}} | {{seat_reason_2}} | {{seat_evidence_basis_2}} | {{seat_counter_signal_2}} |
+| {{seat_committee_3}} | {{seat_display_name_3}} | {{seat_reason_3}} | {{seat_evidence_basis_3}} | {{seat_counter_signal_3}} |
+
+## 4. Go / No-Go / Pivot 建议
 
 **建议：{{decision}}**
 
@@ -37,7 +47,7 @@ flowchart LR
 - Pivot 条件：{{pivot_condition}}
 - No-Go 条件：{{no_go_condition}}
 
-## 4. 核心判断依据
+## 5. 核心判断依据
 
 1. {{core_judgment_1}}（证据：{{core_judgment_1_evidence_id}}）
 2. {{core_judgment_2}}（证据：{{core_judgment_2_evidence_id}}）
@@ -53,27 +63,35 @@ flowchart LR
 | {{ontology_committee_2}} | {{ontology_persona_2}} | {{ontology_rule_2}} | {{ontology_trigger_2}} | {{ontology_missing_evidence_2}} | {{ontology_counter_test_2}} |
 | {{ontology_committee_3}} | {{ontology_persona_3}} | {{ontology_rule_3}} | {{ontology_trigger_3}} | {{ontology_missing_evidence_3}} | {{ontology_counter_test_3}} |
 
-## 5. 五个委员会意见
+## 6. 委员会意见
 
-### 商业委员会
+### 商业与长期价值委员会
 
 {{business_leaders_summary}}
 
-### 创业委员会
+### 创业与非共识机会委员会
 
 {{startup_mentors_summary}}
 
-### 投资委员会
+### 投资与风险委员会
 
 {{investment_masters_summary}}
 
-### 咨询委员会
+### 战略与竞争委员会
 
 {{consulting_elite_summary}}
 
-### 产品委员会
+### 产品与用户委员会
 
 {{product_users_summary}}
+
+### 组织与中国商业实践委员会
+
+{{organization_china_summary}}
+
+### 哲学与人文委员会
+
+{{philosophy_humanities_summary}}
 
 ```mermaid
 flowchart TD
@@ -82,14 +100,38 @@ flowchart TD
   A --> D["投资委员会：{{investment_signal}}"]
   A --> E["咨询委员会：{{consulting_signal}}"]
   A --> F["产品委员会：{{product_signal}}"]
+  A --> J["组织委员会：{{organization_signal}}"]
+  A --> K["哲学委员会：{{philosophy_signal}}"]
   B --> G["强共识：{{strong_consensus_signal}}"]
   C --> G
   D --> H["少数派警告：{{minority_warning_signal}}"]
   E --> I["关键分歧：{{key_disagreement_signal}}"]
   F --> I
+  J --> I
+  K --> H
 ```
 
-## 6. 跨委员会共识与关键分歧
+## 7. 席位代表观点
+
+### {{seat_display_name_1}}
+
+- 代表观点：{{seat_viewpoint_1}}
+- 证据要求：{{seat_evidence_requirement_1}}
+- 反证提醒：{{seat_counter_reminder_1}}
+
+### {{seat_display_name_2}}
+
+- 代表观点：{{seat_viewpoint_2}}
+- 证据要求：{{seat_evidence_requirement_2}}
+- 反证提醒：{{seat_counter_reminder_2}}
+
+### {{seat_display_name_3}}
+
+- 代表观点：{{seat_viewpoint_3}}
+- 证据要求：{{seat_evidence_requirement_3}}
+- 反证提醒：{{seat_counter_reminder_3}}
+
+## 8. 跨委员会共识与关键分歧
 
 **强共识**
 
@@ -103,7 +145,7 @@ flowchart TD
 - {{disagreement_2}}
 - {{disagreement_3}}
 
-## 7. 最大机会、最大风险与反证路径
+## 9. 最大机会、最大风险与反证路径
 
 - 最大机会：{{largest_opportunity}}
 - 最大风险：{{largest_risk}}
@@ -112,7 +154,7 @@ flowchart TD
 - 失败路径 2：{{failure_path_2}}
 - 失败路径 3：{{failure_path_3}}
 
-## 8. 30 / 60 / 90 天行动计划
+## 10. 30 / 60 / 90 天行动计划
 
 ```mermaid
 flowchart LR

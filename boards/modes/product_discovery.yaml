@@ -9,13 +9,19 @@ recommended_for:
 enabled_committees:
   - business-leaders
   - startup-mentors
+  - investment-masters
+  - consulting-elite
   - product-users
+  - organization-china
+  - philosophy-humanities
 required_sections:
   - 一页结论
   - 输入材料与审议范围
+  - 本次审议席位
   - Go / No-Go / Pivot 建议
   - 核心判断依据
-  - 五个委员会意见
+  - 委员会意见
+  - 席位代表观点
   - 最大机会、最大风险与反证路径
   - 30 / 60 / 90 天行动计划
   - 附录 A：证据包

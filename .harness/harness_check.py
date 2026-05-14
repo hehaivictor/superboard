@@ -16,6 +16,11 @@ REQUIRED_TASKS = [
     "web_ontology_smoke.yaml",
     "record_followup_calibration.yaml",
     "visual_report_smoke.yaml",
+    "seat_view_schema.yaml",
+    "seat_view_selector.yaml",
+    "persona_display_name.yaml",
+    "board_memo_selected_seats.yaml",
+    "visual_report_seat_cards.yaml",
 ]
 
 
@@ -40,6 +45,8 @@ def main() -> int:
         [sys.executable, "scripts/validate_skill.py"],
         [sys.executable, "scripts/validate_ontology.py"],
         [sys.executable, "-m", "unittest", "tests/test_visual_report_builder.py"],
+        [sys.executable, "-m", "unittest", "tests/test_seat_view_selector.py"],
+        [sys.executable, "-m", "unittest", "tests/test_persona_display_names.py"],
     ]:
         code = run(command)
         if code != 0:

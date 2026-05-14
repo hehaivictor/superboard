@@ -1,0 +1,7 @@
+id: visual_report_seat_cards
+name: 视觉报告席位卡片
+command: python3 -m unittest tests/test_visual_report_builder.py
+success_criteria:
+  - visual_report 包含 seat_view_cards
+  - 视觉 Markdown 包含本次参与席位
+  - 席位卡片复用 record 字段，不新增外部事实

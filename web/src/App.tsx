@@ -86,6 +86,7 @@ type VisualAppendixSection = {
 type VisualReport = {
   schema_version: string;
   hero: VisualHero;
+  seat_view_cards: VisualCard[];
   decision_cards: VisualCard[];
   committee_cards: VisualCard[];
   ontology_cards: VisualCard[];
@@ -128,6 +129,7 @@ type CommitteeRuleMatrix = {
   committee: string;
   rule_hits: Array<{
     persona_id: string;
+    persona_name?: string;
     rule_id: string;
     triggered_by: string[];
   }>;
@@ -182,9 +184,9 @@ const fallbackConfig: Config = {
     {
       mode_id: "deep_board_review",
       name: "深度董事会审议",
-      description: "完整五委员会审议，适合可转发建议书。",
+      description: "完整七委员会审议，适合可转发建议书。",
       recommended_for: ["产品需求", "项目计划", "商业计划"],
-      enabled_committees: ["business-leaders", "startup-mentors", "investment-masters", "consulting-elite", "product-users"],
+      enabled_committees: ["business-leaders", "startup-mentors", "investment-masters", "consulting-elite", "product-users", "organization-china", "philosophy-humanities"],
       required_sections: ["证据包", "假设账本", "决策记录条目"],
       depth: "deep",
       include_persona_appendix: true
@@ -193,12 +195,14 @@ const fallbackConfig: Config = {
 };
 
 const committeeLabels: Record<string, string> = {
-  "business-leaders": "商业委员会",
-  "startup-mentors": "创业委员会",
-  "investment-masters": "投资委员会",
-  "consulting-elite": "咨询委员会",
-  "product-users": "产品委员会"
-  , "synthetic-users": "用户模拟组"
+  "business-leaders": "商业与长期价值委员会",
+  "startup-mentors": "创业与非共识机会委员会",
+  "investment-masters": "投资与风险委员会",
+  "consulting-elite": "战略与竞争委员会",
+  "product-users": "产品与用户委员会",
+  "organization-china": "组织与中国商业实践委员会",
+  "philosophy-humanities": "哲学与人文委员会",
+  "synthetic-users": "用户模拟组"
 };
 
 const modeLabels: Record<string, string> = {
@@ -243,6 +247,16 @@ const fieldLabels: Record<string, string> = {
   ontology_rule_hits: "本体规则命中",
   committee_rule_matrix: "委员会规则链",
   triggered_specialists: "按需触发专家",
+  selected_seats: "本次审议席位",
+  seat_viewpoints: "席位代表观点",
+  seat_selection_trace: "席位选择轨迹",
+  display_name: "显示名称",
+  committee_name: "委员会名称",
+  selection_reason: "入选原因",
+  evidence_basis: "证据门槛",
+  counter_signal: "反证信号",
+  viewpoint: "代表观点",
+  matched_signals: "命中信号",
   persona_id: "本体人物",
   persona_name: "人物名称",
   committee: "委员会",
@@ -588,6 +602,7 @@ function VisualReportView({ report }: { report?: VisualReport }) {
         </section>
 
         <VisualSection title="决策摘要卡片" cards={report.decision_cards} />
+        <VisualSection title="本次参与席位" cards={report.seat_view_cards ?? []} />
         <VisualSection title="AI 洞察" cards={report.insight_cards} />
         <VisualSection title="委员会卡片" cards={report.committee_cards} />
         <VisualSection title="本体规则卡片" cards={report.ontology_cards.slice(0, 6)} />
@@ -1156,7 +1171,7 @@ export function App() {
                           <div className="mt-3 space-y-2">
                             {group.rule_hits.map((hit, index) => (
                               <div key={`${hit.persona_id}-${hit.rule_id}-${index}`} className="rounded-md bg-slate-50 p-2 text-xs">
-                                <div className="font-medium text-slate-800">{hit.persona_id} / {hit.rule_id}</div>
+                                <div className="font-medium text-slate-800">{hit.persona_name ?? hit.persona_id} / {hit.rule_id}</div>
                                 <div className="mt-1 text-slate-500">触发词：{hit.triggered_by.join("、") || "未记录"}</div>
                               </div>
                             ))}

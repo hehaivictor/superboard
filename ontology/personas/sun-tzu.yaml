@@ -1,0 +1,238 @@
+{
+  "persona_id": "sun-tzu",
+  "name": "孙子",
+  "display_name": "孙子",
+  "english_name": "Sun Tzu",
+  "committee": "consulting-elite",
+  "ontology_level": "core",
+  "source_quality": "high",
+  "version": 1,
+  "concepts": [
+    "竞争态势、避实击虚与胜算",
+    "证据约束",
+    "反证实验",
+    "适用边界",
+    "商业转译"
+  ],
+  "decision_rules": [
+    {
+      "rule_id": "sun_tzu_advantage_positioning",
+      "description": "判断是否形成避实击虚的竞争优势位置",
+      "triggers": [
+        "竞争",
+        "差异化",
+        "定价",
+        "市场",
+        "优势"
+      ],
+      "positive_signals": [
+        "优势资源集中到关键战场",
+        "客户能感知差异化"
+      ],
+      "red_flags": [
+        "平均用力",
+        "正面硬拼强势对手"
+      ],
+      "evidence_required": [
+        "竞品对比",
+        "客户选择理由",
+        "资源约束",
+        "差异化证据"
+      ],
+      "counter_tests": [
+        "若无法说明优势资源打向哪里，则胜算判断降级"
+      ],
+      "confidence_boundary": [
+        "只转译为商业竞争态势判断，不鼓励机会主义或短期博弈"
+      ]
+    },
+    {
+      "rule_id": "sun_tzu_seat_rule_1",
+      "description": "从竞争态势、避实击虚与胜算审议当前决策的第 1 个规则",
+      "triggers": [
+        "竞争",
+        "态势",
+        "优势",
+        "弱点"
+      ],
+      "positive_signals": [
+        "材料中存在直接证据",
+        "判断能连接当前决策"
+      ],
+      "red_flags": [
+        "只有口号没有证据",
+        "观点无法被反证"
+      ],
+      "evidence_required": [
+        "当前材料来源块",
+        "用户或业务证据",
+        "可执行验证方式"
+      ],
+      "counter_tests": [
+        "若无法说明优势资源打向哪里，则胜算判断降级。"
+      ],
+      "confidence_boundary": [
+        "只作为公开材料提炼的决策本体视角，不代表本人实时观点或背书"
+      ]
+    },
+    {
+      "rule_id": "sun_tzu_seat_rule_2",
+      "description": "从竞争态势、避实击虚与胜算审议当前决策的第 2 个规则",
+      "triggers": [
+        "态势",
+        "优势",
+        "弱点",
+        "资源"
+      ],
+      "positive_signals": [
+        "材料中存在直接证据",
+        "判断能连接当前决策"
+      ],
+      "red_flags": [
+        "只有口号没有证据",
+        "观点无法被反证"
+      ],
+      "evidence_required": [
+        "当前材料来源块",
+        "用户或业务证据",
+        "可执行验证方式"
+      ],
+      "counter_tests": [
+        "若无法说明优势资源打向哪里，则胜算判断降级。"
+      ],
+      "confidence_boundary": [
+        "只作为公开材料提炼的决策本体视角，不代表本人实时观点或背书"
+      ]
+    },
+    {
+      "rule_id": "sun_tzu_seat_rule_3",
+      "description": "从竞争态势、避实击虚与胜算审议当前决策的第 3 个规则",
+      "triggers": [
+        "优势",
+        "弱点",
+        "资源",
+        "胜算"
+      ],
+      "positive_signals": [
+        "材料中存在直接证据",
+        "判断能连接当前决策"
+      ],
+      "red_flags": [
+        "只有口号没有证据",
+        "观点无法被反证"
+      ],
+      "evidence_required": [
+        "当前材料来源块",
+        "用户或业务证据",
+        "可执行验证方式"
+      ],
+      "counter_tests": [
+        "若无法说明优势资源打向哪里，则胜算判断降级。"
+      ],
+      "confidence_boundary": [
+        "只作为公开材料提炼的决策本体视角，不代表本人实时观点或背书"
+      ]
+    },
+    {
+      "rule_id": "sun_tzu_seat_rule_4",
+      "description": "从竞争态势、避实击虚与胜算审议当前决策的第 4 个规则",
+      "triggers": [
+        "弱点",
+        "资源",
+        "胜算",
+        "差异化"
+      ],
+      "positive_signals": [
+        "材料中存在直接证据",
+        "判断能连接当前决策"
+      ],
+      "red_flags": [
+        "只有口号没有证据",
+        "观点无法被反证"
+      ],
+      "evidence_required": [
+        "当前材料来源块",
+        "用户或业务证据",
+        "可执行验证方式"
+      ],
+      "counter_tests": [
+        "若无法说明优势资源打向哪里，则胜算判断降级。"
+      ],
+      "confidence_boundary": [
+        "只作为公开材料提炼的决策本体视角，不代表本人实时观点或背书"
+      ]
+    }
+  ],
+  "activation": {
+    "topics": [
+      "竞争",
+      "态势",
+      "优势",
+      "弱点"
+    ],
+    "material_signals": [
+      "竞争",
+      "态势",
+      "优势",
+      "弱点"
+    ],
+    "negative_signals": [
+      "与当前材料无关",
+      "只有名人效应但无证据",
+      "无法形成反证实验"
+    ],
+    "min_evidence": [
+      "至少一个当前来源块",
+      "至少一个可验证证据要求",
+      "至少一个反证信号"
+    ]
+  },
+  "representative_viewpoints": [
+    {
+      "lens": "竞争态势、避实击虚与胜算",
+      "role": "用孙子视角审议当前决策，但不代表本人参与、授权或背书。",
+      "view_template": "孙子视角下，当前判断必须先回答：竞争态势、避实击虚与胜算是否被材料证据支持。"
+    }
+  ],
+  "evidence_thresholds": [
+    "必须引用当前材料来源块",
+    "必须说明缺失证据",
+    "必须给出可执行反证信号"
+  ],
+  "counter_tests": [
+    "若无法说明优势资源打向哪里，则胜算判断降级。"
+  ],
+  "misuse_guardrails": [
+    "不得伪造人物原话",
+    "不得把人物观点压过材料证据",
+    "不得在无证据时给高置信结论"
+  ],
+  "failure_modes": [
+    "把人物框架泛化到无关场景",
+    "把推断写成事实",
+    "缺少反证实验仍给高置信结论"
+  ],
+  "confidence_boundary": [
+    "只作为公开材料提炼的决策本体，不代表本人实时观点或背书"
+  ],
+  "source_map": [
+    {
+      "source": "personas/sun-tzu.md",
+      "type": "local dossier or planned ontology source"
+    }
+  ],
+  "case_map": [
+    {
+      "case": "竞争态势、避实击虚与胜算",
+      "lesson": "用竞争态势、避实击虚与胜算约束当前商业判断"
+    }
+  ],
+  "not_for": [
+    "冒充人物本人发言",
+    "替代专业意见",
+    "在无材料证据时强行给确定结论"
+  ],
+  "calibration_notes": [
+    "第一版只记录规则命中和席位选择，不自动调整权重"
+  ]
+}

@@ -47,6 +47,7 @@ REQUIRED_FILES = [
     "scripts/evaluate_ontology_quality.py",
     "scripts/ontology_loader.py",
     "scripts/ontology_matcher.py",
+    "scripts/seat_view_selector.py",
     "scripts/validate_skill.py",
     "scripts/audit_board_memo.py",
     "scripts/visual_report_builder.py",
@@ -60,10 +61,17 @@ REQUIRED_FILES = [
     ".harness/tasks/web_ontology_smoke.yaml",
     ".harness/tasks/record_followup_calibration.yaml",
     ".harness/tasks/visual_report_smoke.yaml",
+    ".harness/tasks/seat_view_schema.yaml",
+    ".harness/tasks/seat_view_selector.yaml",
+    ".harness/tasks/persona_display_name.yaml",
+    ".harness/tasks/board_memo_selected_seats.yaml",
+    ".harness/tasks/visual_report_seat_cards.yaml",
     "examples/ontology-evaluation-report.md",
     "tests/test_validate_skill.py",
     "tests/test_validate_ontology.py",
     "tests/test_visual_report_builder.py",
+    "tests/test_persona_display_names.py",
+    "tests/test_seat_view_selector.py",
 ]
 
 REQUIRED_PERSONA_FIELDS = [
@@ -93,12 +101,14 @@ REQUIRED_PERSONA_FIELDS = [
 REQUIRED_BOARD_MEMO_SECTIONS = [
     "1. 一页结论",
     "2. 输入材料与审议范围",
-    "3. Go / No-Go / Pivot 建议",
-    "4. 核心判断依据",
-    "5. 五个委员会意见",
-    "6. 跨委员会共识与关键分歧",
-    "7. 最大机会、最大风险与反证路径",
-    "8. 30 / 60 / 90 天行动计划",
+    "3. 本次审议席位",
+    "4. Go / No-Go / Pivot 建议",
+    "5. 核心判断依据",
+    "6. 委员会意见",
+    "7. 席位代表观点",
+    "8. 跨委员会共识与关键分歧",
+    "9. 最大机会、最大风险与反证路径",
+    "10. 30 / 60 / 90 天行动计划",
     "附录 A：证据包",
     "附录 B：待验证假设",
     "附录 C：Persona 关键意见摘要",
@@ -157,8 +167,8 @@ DEEP_OUTPUTS = [
     "examples/output-deep-project-board-memo.md",
 ]
 
-EXPECTED_COMMITTEE_COUNT = 5
-EXPECTED_PERSONA_COUNT = 15
+EXPECTED_COMMITTEE_COUNT = 7
+EXPECTED_PERSONA_COUNT = 21
 REPLACED_PERSONA_IDS = [
     "mckinsey-strategy-partner",
     "bcg-growth-partner",

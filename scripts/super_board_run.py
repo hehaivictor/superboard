@@ -16,17 +16,20 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 import ontology_matcher
+import seat_view_selector
 
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_MODE = "deep_board_review"
 
 COMMITTEE_LABELS = {
-    "business-leaders": "商业委员会",
-    "startup-mentors": "创业委员会",
-    "investment-masters": "投资委员会",
-    "consulting-elite": "咨询委员会",
-    "product-users": "产品委员会",
+    "business-leaders": "商业与长期价值委员会",
+    "startup-mentors": "创业与非共识机会委员会",
+    "investment-masters": "投资与风险委员会",
+    "consulting-elite": "战略与竞争委员会",
+    "product-users": "产品与用户委员会",
+    "organization-china": "组织与中国商业实践委员会",
+    "philosophy-humanities": "哲学与人文委员会",
     "synthetic-users": "用户模拟组",
 }
 
@@ -250,6 +253,18 @@ def build_record(
     ontology_trace = ontology_matcher.match_ontology_trace(ROOT, text)
     ontology_rule_hits = compact_ontology_rule_hits(ontology_trace)
     committee_rule_matrix = ontology_matcher.committee_rule_matrix(ontology_trace)
+    seat_selection = seat_view_selector.select_seats(
+        ROOT,
+        text,
+        ontology_rule_hits,
+        committee_rule_matrix,
+        mode_id=mode_id,
+    )
+    triggered_specialists = [
+        seat
+        for seat in seat_selection["selected_seats"]
+        if seat.get("ontology_level") == "triggered_specialist"
+    ]
     return {
         "decision_id": decision_id,
         "created_at": created_at,
@@ -262,7 +277,10 @@ def build_record(
         "ontology_trace": ontology_trace,
         "ontology_rule_hits": ontology_rule_hits,
         "committee_rule_matrix": committee_rule_matrix,
-        "triggered_specialists": [],
+        "triggered_specialists": triggered_specialists,
+        "selected_seats": seat_selection["selected_seats"],
+        "seat_viewpoints": seat_selection["seat_viewpoints"],
+        "seat_selection_trace": seat_selection["seat_selection_trace"],
         "assumptions": [
             {
                 "assumption": "审议尚未由模型完成，此记录为运行器生成的待填充骨架。",
@@ -342,14 +360,24 @@ def build_prompt_bundle(input_path: Path, text: str, mode: dict[str, object], re
     rule_hits = record.get("ontology_rule_hits", [])
     rule_hit_lines = "\n".join(
         "- {committee} / {persona} / {rule}：触发词 {triggers}；反证 {counter}".format(
-            committee=hit.get("committee", ""),
-            persona=hit.get("persona_id", ""),
+            committee=COMMITTEE_LABELS.get(str(hit.get("committee", "")), str(hit.get("committee", ""))),
+            persona=hit.get("persona_name", "") or hit.get("persona_id", ""),
             rule=hit.get("rule_id", ""),
             triggers=", ".join(str(item) for item in hit.get("triggered_by", [])),
             counter=hit.get("counter_test", ""),
         )
         for hit in rule_hits
         if isinstance(hit, dict)
+    )
+    selected_seats = record.get("selected_seats", [])
+    selected_seat_lines = "\n".join(
+        "- {name}（{committee}）：{reason}".format(
+            name=seat.get("display_name", ""),
+            committee=seat.get("committee_name") or COMMITTEE_LABELS.get(str(seat.get("committee", "")), str(seat.get("committee", ""))),
+            reason=seat.get("selection_reason", ""),
+        )
+        for seat in selected_seats
+        if isinstance(seat, dict)
     )
     return f"""# 超级董事会提示包
 
@@ -394,9 +422,13 @@ def build_prompt_bundle(input_path: Path, text: str, mode: dict[str, object], re
 
 {rule_hit_lines or "- 暂无本体规则命中；请在模型审议时明确说明证据缺口。"}
 
+## 本次审议席位
+
+{selected_seat_lines or "- 暂无席位选择；请先检查 boards/default-board.yaml。"}
+
 ## 执行说明
 
-严格遵循 `protocols/board-review.md` 和 `templates/board-memo.md`。只输出一套董事会建议书目录，不要先生成自定义目录再追加模板目录。正文只引用证据编号，来源摘录集中放在附录 A；待验证假设集中放在附录 B；Persona 摘要集中放在附录 C；决策记录集中放在附录 D。每条核心判断必须引用来源块；没有来源块时必须标注为推断或假设。不得编造外部数据、人物原话或模型运行结果。同一事实不要在三个以上章节重复展开。解释输入材料时必须区分“材料文件”和“来源块”：来源块是同一材料文件拆分后的文本片段，不代表不同文件。
+严格遵循 `protocols/board-review.md` 和 `templates/board-memo.md`。只输出一套董事会建议书目录，不要先生成自定义目录再追加模板目录。必须列出“本次审议席位”和“席位代表观点”，但未启用或未触发的席位不要写给用户。正文只引用证据编号，来源摘录集中放在附录 A；待验证假设集中放在附录 B；Persona 摘要集中放在附录 C；决策记录集中放在附录 D。每条核心判断必须引用来源块；没有来源块时必须标注为推断或假设。不得编造外部数据、人物原话或模型运行结果。同一事实不要在三个以上章节重复展开。解释输入材料时必须区分“材料文件”和“来源块”：来源块是同一材料文件拆分后的文本片段，不代表不同文件。
 
 ## 输入材料
 
@@ -420,6 +452,68 @@ def source_block_summary(record: dict[str, object], limit: int = 5) -> str:
     return "\n".join(lines) or "- 暂无来源块"
 
 
+def as_dict_list(value: object) -> list[dict[str, object]]:
+    if not isinstance(value, list):
+        return []
+    return [item for item in value if isinstance(item, dict)]
+
+
+def render_selected_seats(record: dict[str, object]) -> str:
+    lines: list[str] = []
+    for seat in as_dict_list(record.get("selected_seats", [])):
+        name = str(seat.get("display_name", "")).strip()
+        committee = str(seat.get("committee_name") or COMMITTEE_LABELS.get(str(seat.get("committee", "")), str(seat.get("committee", ""))))
+        reason = str(seat.get("selection_reason", "")).strip()
+        evidence = str(seat.get("evidence_basis", "")).strip()
+        counter = str(seat.get("counter_signal", "")).strip()
+        if not name:
+            continue
+        lines.append(f"- **{name}**（{committee}）：{reason} 证据门槛：{evidence}。反证信号：{counter}")
+    return "\n".join(lines) or "- 暂无席位选择。"
+
+
+def render_seat_viewpoints(record: dict[str, object]) -> str:
+    lines: list[str] = []
+    for item in as_dict_list(record.get("seat_viewpoints", [])):
+        name = str(item.get("display_name", "")).strip()
+        committee = str(item.get("committee_name") or COMMITTEE_LABELS.get(str(item.get("committee", "")), str(item.get("committee", ""))))
+        viewpoint = str(item.get("viewpoint", "")).strip()
+        evidence = str(item.get("evidence_basis", "")).strip()
+        counter = str(item.get("counter_signal", "")).strip()
+        if not name:
+            continue
+        lines.append(f"### {name}（{committee}）\n\n- 代表观点：{viewpoint}\n- 证据要求：{evidence}\n- 反证提醒：{counter}")
+    return "\n\n".join(lines) or "- 暂无席位观点。"
+
+
+def render_ontology_hits(record: dict[str, object], limit: int = 8) -> str:
+    rows = [
+        "| 委员会 | 本体人物 | 触发规则 | 触发材料 | 证据缺口 | 反证实验 |",
+        "|---|---|---|---|---|---|",
+    ]
+    for hit in as_dict_list(record.get("ontology_rule_hits", []))[:limit]:
+        committee = COMMITTEE_LABELS.get(str(hit.get("committee", "")), str(hit.get("committee", "")))
+        name = str(hit.get("persona_name") or hit.get("display_name") or hit.get("persona_id") or "")
+        triggers = "、".join(str(item) for item in hit.get("triggered_by", []) if str(item).strip()) if isinstance(hit.get("triggered_by"), list) else ""
+        missing = "、".join(str(item) for item in hit.get("missing_evidence", []) if str(item).strip()) if isinstance(hit.get("missing_evidence"), list) else ""
+        rows.append(
+            f"| {committee} | {name} | {hit.get('rule_id', '')} | {triggers or '未记录'} | {missing or '未记录'} | {hit.get('counter_test', '未记录')} |"
+        )
+    if len(rows) == 2:
+        rows.append("| 暂无 | 暂无 | 暂无 | 暂无 | 暂无 | 暂无 |")
+    return "\n".join(rows)
+
+
+def render_committee_matrix(record: dict[str, object]) -> str:
+    lines: list[str] = []
+    for group in as_dict_list(record.get("committee_rule_matrix", [])):
+        committee_id = str(group.get("committee", ""))
+        label = COMMITTEE_LABELS.get(committee_id, committee_id)
+        count = len(as_dict_list(group.get("rule_hits", [])))
+        lines.append(f"- {label}：命中 {count} 条本体规则。")
+    return "\n".join(lines) or "- 暂无委员会规则命中，模型审议时必须说明证据不足。"
+
+
 def build_board_memo(input_path: Path, text: str, mode: dict[str, object], record: dict[str, object]) -> str:
     """Generate a local board memo draft without calling an external model."""
     mode_id = str(record.get("mode_id", ""))
@@ -438,8 +532,6 @@ def build_board_memo(input_path: Path, text: str, mode: dict[str, object], recor
     assumptions = record.get("assumptions", [])
     checkpoints = record.get("follow_up_checkpoints", [])
     actions = record.get("action_items", [])
-    rule_hits = record.get("ontology_rule_hits", [])
-    committee_rule_matrix = record.get("committee_rule_matrix", [])
     material_pack = record.get("material_pack", {}) if isinstance(record.get("material_pack"), dict) else {}
     file_count = len(material_pack.get("files", [])) if isinstance(material_pack, dict) else 0
     source_block_count = len(material_pack.get("source_blocks", [])) if isinstance(material_pack, dict) else 0
@@ -471,13 +563,19 @@ def build_board_memo(input_path: Path, text: str, mode: dict[str, object], recor
 
 {required_sections or "- 暂无必选章节"}
 
-## 3. Go / No-Go / Pivot 建议
+## 3. 本次审议席位
+
+本次建议书只展示实际进入审议的席位。未启用或未触发的席位不进入用户可见报告。
+
+{render_selected_seats(record)}
+
+## 4. Go / No-Go / Pivot 建议
 
 - 推进：关键假设获得直接证据支持，且风险已有负责人和验证节奏。
 - 调整：目标仍成立，但范围、用户、定价、交付路径或证据链需要调整。
 - 不推进：核心用户需求、商业价值或执行约束无法通过反证实验。
 
-## 4. 核心判断依据
+## 5. 核心判断依据
 
 1. 输入材料已被拆解为来源块，首个可引用来源为 `{source_block_id}`。
 2. 所有后续判断都应绑定来源块，避免把推断写成事实。
@@ -485,32 +583,32 @@ def build_board_memo(input_path: Path, text: str, mode: dict[str, object], recor
 
 ### 本体触发摘要
 
-```json
-{json.dumps(rule_hits, ensure_ascii=False, indent=2)}
-```
+{render_ontology_hits(record)}
 
 ### 委员会规则矩阵
 
-```json
-{json.dumps(committee_rule_matrix, ensure_ascii=False, indent=2)}
-```
+{render_committee_matrix(record)}
 
-## 5. 五个委员会意见
+## 6. 委员会意见
 
 {committees or "- 暂无启用委员会"}
 
-## 6. 跨委员会共识与关键分歧
+## 7. 席位代表观点
+
+{render_seat_viewpoints(record)}
+
+## 8. 跨委员会共识与关键分歧
 
 - 共识：需要补齐证据强度、关键假设和反证实验。
 - 分歧：等待模型按委员会角色形成具体意见。
 
-## 7. 最大机会、最大风险与反证路径
+## 9. 最大机会、最大风险与反证路径
 
 - 最大机会：材料中可能存在可验证的产品或商业增量。
 - 最大风险：核心判断缺少直接证据时，建议会退化为泛化建议。
 - 反证路径：要求反方审查只寻找最强反例：用户是否真的需要、成本是否被低估、替代方案是否更便宜。
 
-## 8. 30 / 60 / 90 天行动计划
+## 10. 30 / 60 / 90 天行动计划
 
 ```json
 {json.dumps(checkpoints, ensure_ascii=False, indent=2)}

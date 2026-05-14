@@ -2,8 +2,9 @@
 
 ## 目标
 
-- 落地 15 个核心本体董事。
+- 落地 21 个核心本体董事和 7 个常驻委员会。
 - 将本体规则命中接入 CLI、Web、record、follow-up。
+- 将本次审议席位、席位代表观点和席位选择轨迹接入 CLI、Web、record、视觉报告。
 - 建立可重复的 ontology quality gate。
 - 新增视觉版董事会建议书视图和导出。
 
@@ -22,6 +23,8 @@
 - `python3 -m unittest tests/test_validate_ontology.py`
 - `python3 scripts/evaluate_ontology_quality.py`
 - `python3 -m unittest tests/test_visual_report_builder.py`
+- `python3 -m unittest tests/test_seat_view_selector.py`
+- `python3 -m unittest tests/test_persona_display_names.py`
 - `uv run python .harness/harness_check.py`
 - `uv run python .harness/harness_eval.py`
 - `cd web && npm run build`

@@ -15,6 +15,8 @@ def main() -> int:
     for command in [
         [sys.executable, "scripts/evaluate_ontology_quality.py"],
         [sys.executable, "-m", "unittest", "tests/test_visual_report_builder.py"],
+        [sys.executable, "-m", "unittest", "tests/test_seat_view_selector.py"],
+        [sys.executable, "-m", "unittest", "tests/test_persona_display_names.py"],
     ]:
         result = subprocess.run(command, cwd=ROOT, text=True, check=False)
         if result.returncode != 0:

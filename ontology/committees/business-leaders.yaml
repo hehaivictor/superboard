@@ -1,10 +1,20 @@
 {
   "committee_id": "business-leaders",
-  "name": "business-leaders",
+  "name": "商业与长期价值委员会",
   "core_personas": [
-    "jeff-bezos",
     "warren-buffett",
+    "jeff-bezos",
     "peter-drucker"
   ],
-  "review_focus": "ontology-backed board review"
+  "review_focus": "客户价值、长期商业质量、现金流、护城河和管理责任。",
+  "representative_selection": {
+    "min_selected": 1,
+    "max_selected": 2,
+    "selection_basis": [
+      "议题适配度",
+      "本体规则命中度",
+      "材料证据覆盖度",
+      "观点差异度"
+    ]
+  }
 }

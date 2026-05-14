@@ -1,0 +1,7 @@
+id: seat_view_selector
+name: 本次审议席位选择器
+command: python3 -m unittest tests/test_seat_view_selector.py
+success_criteria:
+  - 七个常驻委员会各选择一位代表
+  - 触发专家只在材料命中信号时加入
+  - 每个席位都有入选原因、证据门槛和反证信号

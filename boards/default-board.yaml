@@ -7,54 +7,70 @@ supported_input_types:
   - business_plan
 committees:
   - id: business-leaders
-    name: 商业委员会
-    review_focus: 客户倒推、长期商业质量、管理责任和组织使命。
-    output_expectations: 判断方向是否足够重要、现金流和护城河是否成立、组织是否能交付。
+    name: 商业与长期价值委员会
+    review_focus: 客户价值、长期商业质量、现金流、护城河和管理责任。
+    output_expectations: 选择本次最相关席位，输出证据约束、反证信号和可执行判断。
     personas:
-      - jeff-bezos
       - warren-buffett
+      - jeff-bezos
       - peter-drucker
   - id: startup-mentors
-    name: 创业委员会
-    review_focus: 早期用户强痛点、颠覆式路径、高不确定性假设验证。
-    output_expectations: 判断是否有真实用户拉力、是否能从小切口学习并进入大市场。
+    name: 创业与非共识机会委员会
+    review_focus: 创业切口、产品直觉、非共识机会、秘密和垄断潜力。
+    output_expectations: 选择本次最相关席位，输出证据约束、反证信号和可执行判断。
     personas:
+      - steve-jobs
+      - peter-thiel
       - paul-graham
-      - clayton-christensen
-      - rita-mcgrath
   - id: investment-masters
-    name: 投资委员会
-    review_focus: 误判、激励、尾部风险、系统周期和资本效率。
-    output_expectations: 判断长期价值、下行风险、资本效率和可恢复性。
+    name: 投资与风险委员会
+    review_focus: 误判、激励、尾部风险、周期和资本效率。
+    output_expectations: 选择本次最相关席位，输出证据约束、反证信号和可执行判断。
     personas:
       - charlie-munger
       - nassim-taleb
       - ray-dalio
   - id: consulting-elite
-    name: 咨询委员会
-    review_focus: 竞争战略、关键诊断、战略选择和连贯行动。
-    output_expectations: 判断战略选项、执行路径、组织协同和可衡量结果。
+    name: 战略与竞争委员会
+    review_focus: 竞争结构、战略诊断、取舍、关键难点和避实击虚。
+    output_expectations: 选择本次最相关席位，输出证据约束、反证信号和可执行判断。
     personas:
       - michael-porter
       - richard-rumelt
-      - roger-martin
+      - sun-tzu
   - id: product-users
-    name: 产品委员会
-    review_focus: 产品发现、人因体验、端到端体验和用户可感知价值。
-    output_expectations: 判断用户价值、使用阻力、产品风险和下一步实验。
+    name: 产品与用户委员会
+    review_focus: 产品发现、人因体验、用户心智和端到端体验。
+    output_expectations: 选择本次最相关席位，输出证据约束、反证信号和可执行判断。
     personas:
       - marty-cagan
       - don-norman
-      - steve-jobs
+      - zhang-xiaolong
+  - id: organization-china
+    name: 组织与中国商业实践委员会
+    review_focus: 组织韧性、长期投入、信息效率、经营责任和中国商业实践。
+    output_expectations: 选择本次最相关席位，输出证据约束、反证信号和可执行判断。
+    personas:
+      - ren-zhengfei
+      - zhang-yiming
+      - kazuo-inamori
+  - id: philosophy-humanities
+    name: 哲学与人文委员会
+    review_focus: 价值判断、系统平衡、责任伦理和知行合一。
+    output_expectations: 选择本次最相关席位，输出证据约束、反证信号和可执行判断。
+    personas:
+      - laozi
+      - confucius
+      - wang-yangming
 core_board:
   business-leaders:
-    - jeff-bezos
     - warren-buffett
+    - jeff-bezos
     - peter-drucker
   startup-mentors:
+    - steve-jobs
+    - peter-thiel
     - paul-graham
-    - clayton-christensen
-    - rita-mcgrath
   investment-masters:
     - charlie-munger
     - nassim-taleb
@@ -62,24 +78,34 @@ core_board:
   consulting-elite:
     - michael-porter
     - richard-rumelt
-    - roger-martin
+    - sun-tzu
   product-users:
     - marty-cagan
     - don-norman
-    - steve-jobs
+    - zhang-xiaolong
+  organization-china:
+    - ren-zhengfei
+    - zhang-yiming
+    - kazuo-inamori
+  philosophy-humanities:
+    - laozi
+    - confucius
+    - wang-yangming
 triggered_specialists:
-  ai_scaling: [sam-altman]
-  leverage: [naval-ravikant]
+  ai_platform: [sam-altman]
   extreme_engineering: [elon-musk]
-  information_efficiency: [zhang-yiming]
+  leverage: [naval-ravikant]
   platform_growth: [reid-hoffman]
   reflexivity: [george-soros]
-  design_management: [julie-zhuo]
   enterprise_transformation: [lou-gerstner]
   experience_curve: [bruce-henderson]
+  scientific_reasoning: [richard-feynman]
+  brand_narrative: [david-ogilvy]
+  strategic_mobilization: [mao-zedong]
 distilled_archive:
+  - clayton-christensen
+  - rita-mcgrath
+  - roger-martin
   - orit-gadiesh
   - marvin-bower
   - marc-andreessen
-  - peter-thiel
-  - richard-feynman

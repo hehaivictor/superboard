@@ -1,10 +1,20 @@
 {
   "committee_id": "startup-mentors",
-  "name": "startup-mentors",
+  "name": "创业与非共识机会委员会",
   "core_personas": [
-    "paul-graham",
-    "clayton-christensen",
-    "rita-mcgrath"
+    "steve-jobs",
+    "peter-thiel",
+    "paul-graham"
   ],
-  "review_focus": "ontology-backed board review"
+  "review_focus": "创业切口、产品直觉、非共识机会、秘密和垄断潜力。",
+  "representative_selection": {
+    "min_selected": 1,
+    "max_selected": 2,
+    "selection_basis": [
+      "议题适配度",
+      "本体规则命中度",
+      "材料证据覆盖度",
+      "观点差异度"
+    ]
+  }
 }

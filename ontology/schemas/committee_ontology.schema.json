@@ -14,6 +14,9 @@
     },
     "core_personas": {
       "type": "array"
+    },
+    "representative_selection": {
+      "type": "object"
     }
   }
 }

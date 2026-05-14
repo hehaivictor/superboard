@@ -24,21 +24,27 @@ from ontology_loader import (
 
 
 EXPECTED_CORE_PERSONA_IDS = [
-    "jeff-bezos",
     "warren-buffett",
+    "jeff-bezos",
     "peter-drucker",
+    "steve-jobs",
+    "peter-thiel",
     "paul-graham",
-    "clayton-christensen",
-    "rita-mcgrath",
     "charlie-munger",
     "nassim-taleb",
     "ray-dalio",
     "michael-porter",
     "richard-rumelt",
-    "roger-martin",
+    "sun-tzu",
     "marty-cagan",
     "don-norman",
-    "steve-jobs",
+    "zhang-xiaolong",
+    "ren-zhengfei",
+    "zhang-yiming",
+    "kazuo-inamori",
+    "laozi",
+    "confucius",
+    "wang-yangming",
 ]
 
 REQUIRED_SCHEMA_FILES = [
@@ -50,12 +56,19 @@ REQUIRED_SCHEMA_FILES = [
 REQUIRED_PERSONA_FIELDS = [
     "persona_id",
     "name",
+    "display_name",
+    "english_name",
     "committee",
     "ontology_level",
     "source_quality",
     "version",
     "concepts",
     "decision_rules",
+    "activation",
+    "representative_viewpoints",
+    "evidence_thresholds",
+    "counter_tests",
+    "misuse_guardrails",
     "failure_modes",
     "confidence_boundary",
     "source_map",
@@ -101,6 +114,11 @@ def validate_persona(path: Path, persona: dict[str, Any], core_ids: set[str]) ->
 
     if persona.get("persona_id") != path.stem:
         issues.append(ValidationIssue(relative, "persona_id must match filename"))
+    display_name = str(persona.get("display_name", "")).strip()
+    if not display_name:
+        issues.append(ValidationIssue(relative, "persona must have display_name"))
+    if any(ch.isascii() and ch.isalpha() for ch in display_name):
+        issues.append(ValidationIssue(relative, "display_name must be Chinese-facing, not an English display name"))
     if is_core and persona.get("ontology_level") != "core":
         issues.append(ValidationIssue(relative, "core board persona must have ontology_level: core"))
     if persona.get("ontology_level") not in {"core", "triggered_specialist", "distilled_archive"}:
@@ -130,7 +148,10 @@ def validate_persona(path: Path, persona: dict[str, Any], core_ids: set[str]) ->
     for duplicate in sorted({rule_id for rule_id in rule_ids if rule_ids.count(rule_id) > 1}):
         issues.append(ValidationIssue(relative, f"duplicate rule_id: {duplicate}"))
 
-    for field in ["failure_modes", "confidence_boundary", "source_map", "case_map", "not_for", "calibration_notes"]:
+    activation = persona.get("activation")
+    if not isinstance(activation, dict) or not activation:
+        issues.append(ValidationIssue(relative, "persona must have non-empty activation"))
+    for field in ["representative_viewpoints", "evidence_thresholds", "counter_tests", "misuse_guardrails", "failure_modes", "confidence_boundary", "source_map", "case_map", "not_for", "calibration_notes"]:
         if not list_has_values(persona.get(field)):
             issues.append(ValidationIssue(relative, f"persona must have non-empty {field}"))
 

@@ -15,7 +15,10 @@
     "triggered_specialists",
     "assumptions",
     "evidence_packets",
-    "follow_up_checkpoints"
+    "follow_up_checkpoints",
+    "selected_seats",
+    "seat_viewpoints",
+    "seat_selection_trace"
   ],
   "properties": {
     "decision_id": {
@@ -26,7 +29,12 @@
     },
     "input_type": {
       "type": "string",
-      "enum": ["product_requirement", "project_plan", "business_plan", "unknown"]
+      "enum": [
+        "product_requirement",
+        "project_plan",
+        "business_plan",
+        "unknown"
+      ]
     },
     "mode_id": {
       "type": "string"
@@ -36,7 +44,12 @@
     },
     "decision": {
       "type": "string",
-      "enum": ["Go", "Pivot", "No-Go", "Pending"]
+      "enum": [
+        "Go",
+        "Pivot",
+        "No-Go",
+        "Pending"
+      ]
     },
     "ontology_trace": {
       "type": "array",
@@ -48,7 +61,14 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["persona_id", "committee", "rule_id", "triggered_by", "missing_evidence", "counter_test"],
+        "required": [
+          "persona_id",
+          "committee",
+          "rule_id",
+          "triggered_by",
+          "missing_evidence",
+          "counter_test"
+        ],
         "properties": {
           "persona_id": {
             "type": "string"
@@ -111,6 +131,24 @@
       }
     },
     "follow_up_checkpoints": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "selected_seats": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "seat_viewpoints": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "seat_selection_trace": {
       "type": "array",
       "items": {
         "type": "object"

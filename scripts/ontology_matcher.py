@@ -42,7 +42,8 @@ def evidence_refs(text: str, triggers: list[str]) -> list[str]:
 def build_trace_hit(persona: dict[str, Any], rule: dict[str, Any], triggered_by: list[str]) -> dict[str, Any]:
     return {
         "persona_id": persona["persona_id"],
-        "persona_name": persona["name"],
+        "persona_name": persona.get("display_name") or persona["name"],
+        "display_name": persona.get("display_name") or persona["name"],
         "committee": persona["committee"],
         "ontology_level": persona["ontology_level"],
         "source_quality": persona["source_quality"],
@@ -93,6 +94,7 @@ def committee_rule_matrix(trace: list[dict[str, Any]]) -> list[dict[str, Any]]:
             "rule_hits": [
                 {
                     "persona_id": hit["persona_id"],
+                    "persona_name": hit.get("persona_name") or hit.get("display_name") or hit["persona_id"],
                     "rule_id": hit["rule_id"],
                     "triggered_by": hit["triggered_by"],
                 }
